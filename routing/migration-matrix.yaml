@@ -1,0 +1,188 @@
+schema_version: 1
+source_snapshot: NeroKuang/skills-cursor-intake#1
+status: design-only
+
+skills:
+  already_canonical_or_sync_from_shared_base:
+    - ask-matt
+    - claude-handoff
+    - code-review
+    - codebase-design
+    - diagnosing-bugs
+    - domain-modeling
+    - git-guardrails-claude-code
+    - grill-me
+    - grill-with-docs
+    - grilling
+    - handoff
+    - implement
+    - improve-codebase-architecture
+    - loop-me
+    - migrate-to-shoehorn
+    - prototype
+    - research
+    - resolving-merge-conflicts
+    - scaffold-exercises
+    - setup-matt-pocock-skills
+    - setup-pre-commit
+    - setup-ts-deep-modules
+    - tdd
+    - teach
+    - to-questionnaire
+    - to-spec
+    - to-tickets
+    - triage
+    - wayfinder
+    - wizard
+    - writing-beats
+    - writing-fragments
+    - writing-shape
+
+  evaluate_for_shared_base:
+    design-an-interface:
+      target_actor: controller
+      target_phase: design
+      rationale: Distinct design exploration workflow that can support architecture work.
+    find-skills:
+      target_actor: controller
+      target_phase: discover
+      invocation: skill-gap-fallback
+      rationale: External ecosystem discovery should run after SKILL_GAP, not replace the normal router.
+    qa:
+      target_actor: controller
+      target_phase: discover
+      rationale: Raw issue intake is useful but must be adapted to Controller capabilities and durable task contracts.
+    zeabur-platform-ops:
+      source_kind: rule
+      target_actor: executor
+      target_phases: [verify, operate]
+      action: convert-rule-to-skill
+      rationale: Operational workflow with terminal, HTTP, deployment, and verification semantics.
+
+  private_user:
+    dev-stack-audit:
+      rationale: Depends on the user's local AI tooling environment.
+    notion-reminder-hook:
+      rationale: Personal Notion and Apple Calendar integration.
+    obsidian-vault:
+      rationale: Personal vault integration and local path assumptions.
+      warning: Current captured path appears environment-specific and should be revalidated before reuse.
+    goal-system:
+      source_kind: rule
+      action: convert-rule-to-skill-if-retained
+      rationale: Stateful personal workflow, not an always-loaded engineering Rule.
+    shop-questions:
+      rationale: Reusable personal/client workflow; consider generalization later.
+    edit-article:
+      rationale: Keep private pending evidence that it earns shared-base promotion.
+
+  project_local:
+    fix-lobster-telegram-ping:
+      project: lobster_agi
+    lobster-deploy-02:
+      project: lobster_agi
+    lobster-deploy-06:
+      project: lobster_agi
+    lobster-market-monitor:
+      project: lobster_agi
+    lobster-startup:
+      project: lobster_agi
+    lobster-local-coding:
+      project: lobster_agi
+      action: dissolve
+      rationale: Generic behavior belongs to implement/code-review/shared rules; only lobster context remains local.
+
+  third_party:
+    last30days:
+      action: lock-upstream
+      source: https://github.com/mvanhorn/last30days-skill
+      rationale: Preserve upstream provenance and version instead of silently forking.
+
+  merge_replace_or_retire:
+    ubiquitous-language:
+      action: replace-with
+      target: domain-modeling
+    writing-great-skills:
+      action: replace-with
+      target: writing-for-agents
+    request-refactor-plan:
+      action: replace-with-composition
+      target:
+        - improve-codebase-architecture
+        - grill-with-docs
+        - to-spec
+        - to-tickets
+    batch-grill-me:
+      action: evaluate-as-mode
+      target: grilling
+
+rules:
+  shared_executor_policy:
+    coding-sop:
+      action: extract-portable-parts
+      keep:
+        - read-before-edit
+        - minimal-diff
+        - secret-hygiene
+        - explicit-error-handling
+        - verify-before-completion
+      do_not_promote_as_framework_law:
+        - bilingual-commit-message-format
+        - implicit-no-commit-without-user-command
+
+    ask-when-unclear:
+      action: replace-behavior
+      target: evidence-first-blocked-controller-decision
+
+  shared_technology_rules:
+    frontend:
+      target: rules/tech/frontend.md
+    go:
+      target: rules/tech/go.md
+    python:
+      target: rules/tech/python.md
+    laravel:
+      target: rules/tech/laravel.md
+      action: split-general-from-project-incidents
+    postman-api-best-practices:
+      source_kind: account-user-rule
+      target: rules/tech/api-design.md
+      precedence_note: Existing API contract and Controller-approved specification override generic naming guidance.
+    mysql-list-query-safety:
+      target: rules/tech/mysql-query-safety.md
+      action: split
+      project_incident_target: project-local
+
+  project_local:
+    lobster-market-monitor:
+      project: lobster_agi
+    lobster-n8n-workflows:
+      project: lobster_agi
+    lobster-telegram-ollama:
+      project: lobster_agi
+    manmanlu-api:
+      project: manmanlu-api
+
+  convert_to_skill:
+    zeabur-platform-ops:
+      target_scope: shared-base
+      target_actor: executor
+
+  account_preferences:
+    response-language:
+      value: Traditional Chinese
+      target: account-user-rule
+    self-verification:
+      action: normalize-into-framework-verification
+      duplicate_of: verify-before-completion
+
+manual_unresolved:
+  team_rules:
+    status: unknown-non-blocking
+
+local_installation:
+  cursor_root: ~/.cursor/skills
+  agents_root: ~/.agents/skills
+  current_status: duplicate-installation-surfaces
+  target_status: generated-or-linked-from-canonical-revisions
+  local_edits_policy: drift
