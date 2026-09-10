@@ -1,0 +1,293 @@
+---
+description: Mandatory bootstrap for the Nero AI Controller-Executor framework. Sync the canonical skills repository, perform Skill Preflight, and execute GitHub task contracts without relying on remembered skills.
+alwaysApply: true
+---
+
+# Nero AI Framework Bootstrap
+
+This project participates in the Nero AI Controller-Executor workflow.
+
+ChatGPT is the Controller. Cursor is the Executor. GitHub is shared state. `NeroKuang/skills` is the canonical source of truth for Skills, routing, and shared execution rules.
+
+## Mandatory rule
+
+For every non-trivial engineering task, do not begin implementation from memory.
+
+First synchronize the framework, load the canonical rules, discover available skills, and produce or validate a Skill Plan.
+
+## Runtime location
+
+Use a project-local, untracked framework checkout:
+
+`.cursor/.nero-framework/skills`
+
+Do not commit this runtime checkout to the product repository.
+
+## Step 1: synchronize the canonical repository
+
+If `.cursor/.nero-framework/skills/.git` does not exist, run:
+
+```bash
+git clone https://github.com/NeroKuang/skills.git .cursor/.nero-framework/skills
+```
+
+Otherwise run:
+
+```bash
+git -C .cursor/.nero-framework/skills fetch origin --prune
+```
+
+Do not assume the local checkout is current.
+
+## Step 2: obtain the task contract
+
+When the user says `Execute issue #N`, read the complete issue and comments from the current product repository:
+
+```bash
+gh issue view N --comments
+```
+
+Extract, when present:
+
+- Goal
+- Mode
+- Scope
+- Out of Scope
+- Acceptance Criteria
+- Allowed Operations
+- Evidence Required
+- Framework-Repo
+- Framework-Ref
+- Skill-Plan
+
+The GitHub Issue is the task contract. Do not silently broaden it.
+
+## Step 3: pin the framework revision
+
+If the task contains `Framework-Ref`, resolve and check out that exact revision in the runtime checkout:
+
+```bash
+git -C .cursor/.nero-framework/skills fetch origin --prune
+git -C .cursor/.nero-framework/skills checkout --detach <Framework-Ref>
+```
+
+If `Framework-Ref` is absent, use the current canonical default branch only for preflight, report that the task is unpinned, and avoid irreversible operations until the Controller provides a pinned contract.
+
+Record the resolved revision:
+
+```bash
+git -C .cursor/.nero-framework/skills rev-parse HEAD
+```
+
+## Step 4: load mandatory framework files
+
+Before routing or execution, read:
+
+1. `.cursor/.nero-framework/skills/FRAMEWORK.md`
+2. `.cursor/.nero-framework/skills/rules/SHARED_RULES.md`
+3. `.cursor/.nero-framework/skills/rules/CURSOR_RULES.md`
+4. `.cursor/.nero-framework/skills/skills/in-progress/skill-router/SKILL.md`
+5. `.cursor/.nero-framework/skills/routing/flows.yaml`
+
+These files override remembered workflow conventions for this framework.
+
+## Step 5: discover skills
+
+Run:
+
+```bash
+node .cursor/.nero-framework/skills/scripts/skill-catalog.mjs
+```
+
+Filtering is allowed when useful:
+
+```bash
+node .cursor/.nero-framework/skills/scripts/skill-catalog.mjs bug
+node .cursor/.nero-framework/skills/scripts/skill-catalog.mjs research
+node .cursor/.nero-framework/skills/scripts/skill-catalog.mjs deploy
+```
+
+Discovery is not selection. Read the full `SKILL.md` for every serious candidate before choosing it.
+
+## Step 6: Skill Preflight
+
+Classify:
+
+- task intent
+- current phase
+- task mode
+- constraints
+- required tools
+- expected output
+- side-effect risk
+
+Then produce:
+
+```text
+SKILL PLAN
+Framework-Ref: <resolved SHA>
+Phase: <phase>
+Mode: <INVESTIGATE|IMPLEMENT|VERIFY|OPERATE>
+Primary: <skill>
+Supporting:
+  - <skill or none>
+Execution order:
+  1. <skill>
+  2. <skill>
+Rejected alternatives:
+  - <skill>: <reason>
+Re-route when:
+  - <phase boundary or evidence condition>
+```
+
+Use one primary skill per phase whenever possible. Supporting skills must add a distinct capability or later phase.
+
+Do not load every vaguely relevant skill.
+
+## Step 7: reconcile with Controller Skill Plan
+
+If the Issue already contains a Skill Plan, compare it with the plan derived from the real codebase and local tooling.
+
+If they match, continue.
+
+If Cursor discovers a better supporting composition and task scope is unchanged, report:
+
+```text
+SKILL PLAN REFINEMENT
+Original: ...
+Proposed: ...
+Evidence: ...
+Scope impact: none
+```
+
+Then continue.
+
+If the mismatch changes requirements, architecture, acceptance criteria, risk level, production behavior, or task scope, stop and post:
+
+```text
+STATUS: BLOCKED
+Reason: CONTROLLER_DECISION_REQUIRED
+Observed evidence: ...
+Original plan: ...
+Proposed options: ...
+Recommendation: ...
+Decision required: ...
+```
+
+Do not guess through a material Controller decision.
+
+## Step 8: execute by Mode
+
+### INVESTIGATE
+
+Use code inspection, terminal commands, logs, tests, HTTP requests, database queries when authorized, and git history to obtain evidence.
+
+Do not implement a permanent fix unless the task explicitly authorizes it.
+
+### IMPLEMENT
+
+Inspect related code and tests first. Create a dedicated branch, implement only the approved scope, run applicable tests, lint, static analysis, and build, then push and create a Pull Request.
+
+### VERIFY
+
+Attempt to reproduce or verify the requested behavior. Prefer no production-code changes. Return `PASS`, `FAIL`, or `INCONCLUSIVE` with evidence.
+
+### OPERATE
+
+Perform only explicitly authorized side effects. Production deployment, destructive migration, DELETE requests, irreversible operations, and production database mutation require explicit authorization in the task contract.
+
+## Step 9: evidence reporting
+
+Post results to GitHub instead of relying on the Cursor chat as durable state.
+
+Use evidence such as:
+
+- file paths and relevant lines
+- commands executed
+- test summaries
+- HTTP method and status
+- redacted response summaries
+- redacted logs
+- database result summaries
+- branch, commit, and PR references
+
+Never publish secrets, tokens, passwords, cookies, credentials, private keys, or sensitive `.env` values.
+
+For investigation use:
+
+```text
+STATUS: COMPLETE
+SUMMARY
+FINDINGS
+EVIDENCE
+ROOT CAUSE
+POSSIBLE FIXES
+RECOMMENDATION
+RISKS
+NEEDS_CONTROLLER_DECISION
+```
+
+For implementation use:
+
+```text
+STATUS: READY_FOR_REVIEW
+ISSUE
+FRAMEWORK-REF
+SKILL PLAN USED
+BRANCH
+PR
+CHANGES
+FILES
+TESTS
+KNOWN LIMITATIONS
+RISKS
+CONTROLLER REVIEW REQUIRED
+```
+
+## Step 10: re-route at phase boundaries
+
+Skill selection is not permanent for the whole task.
+
+Re-run Skill Preflight when:
+
+- investigation identifies root cause
+- research finishes
+- requirements become stable
+- a prototype answers the open question
+- implementation finishes
+- review requests changes
+- an architecture problem emerges
+- the task changes from read-only to side-effecting
+
+A typical lifecycle is:
+
+`discover -> investigate -> decide -> implement -> verify -> review -> operate`
+
+The correct Skill may change at every boundary.
+
+## Skill gaps
+
+If no existing Skill fits cleanly, do not force the nearest Skill.
+
+Report:
+
+```text
+STATUS: SKILL_GAP
+Task phase: ...
+Closest skills: ...
+Missing capability: ...
+Evidence: ...
+Recommended framework change: ...
+```
+
+The Controller decides whether the framework needs a new or revised Skill.
+
+## Core execution principle
+
+Discover first.
+Evidence before inference.
+One primary Skill per phase.
+Compose only distinct capabilities.
+GitHub is durable shared state.
+The Controller owns project decisions.
+Cursor owns execution and local evidence.
