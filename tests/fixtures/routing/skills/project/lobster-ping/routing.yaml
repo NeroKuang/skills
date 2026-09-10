@@ -1,0 +1,21 @@
+schema_version: 1
+id: lobster-ping
+scope: project-local
+actors:
+  - executor
+phases:
+  - operate
+  - recover
+capabilities:
+  - terminal
+side_effects: local-write
+requires: []
+composes_with: []
+conflicts_with: []
+selectors:
+  repository:
+    - example/lobster
+source:
+  type: first-party
+priority: 80
+notes: "Synthetic project-local isolation fixture"

@@ -1,0 +1,19 @@
+schema_version: 1
+id: executor-deploy
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - terminal
+  - deployment
+side_effects: production-write
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40
+notes: "Synthetic executor-only terminal skill"
