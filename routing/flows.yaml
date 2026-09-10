@@ -1,0 +1,178 @@
+version: 1
+
+principles:
+  - one_primary_skill_per_phase
+  - supporting_skills_must_add_distinct_capability
+  - reroute_at_phase_boundaries
+  - evidence_before_implementation_when_root_cause_unknown
+  - do_not_force_a_skill_when_none_fits
+
+flows:
+  hard_bug:
+    trigger: "Bug is reproducible, intermittent, regressed, or not obvious from first inspection"
+    phases:
+      - skill: diagnosing-bugs
+        role: primary
+        phase: investigate
+      - skill: tdd
+        role: supporting
+        phase: implement
+        condition: "Root cause is known and a regression test can lock behavior"
+      - skill: code-review
+        role: supporting
+        phase: review
+    rejected_shortcuts:
+      - skill: implement
+        reason: "Do not implement before root cause is sufficiently evidenced"
+      - skill: triage
+        reason: "Triage is for raw incoming issues, not active debugging"
+
+  unclear_feature:
+    trigger: "Feature intent exists but requirements, domain language, or behavior are not stable"
+    phases:
+      - skill: grill-with-docs
+        role: primary
+        phase: discover
+      - skill: prototype
+        role: supporting
+        phase: design
+        condition: "A runnable question cannot be settled reliably in conversation"
+      - skill: to-spec
+        role: supporting
+        phase: design
+        condition: "The build spans multiple sessions or needs durable specification"
+      - skill: to-tickets
+        role: supporting
+        phase: plan
+        condition: "The spec needs decomposition into agent-ready work"
+      - skill: implement
+        role: supporting
+        phase: implement
+      - skill: code-review
+        role: supporting
+        phase: review
+
+  external_research_to_build:
+    trigger: "A design or product decision depends on current or external primary sources"
+    phases:
+      - skill: research
+        role: primary
+        phase: research
+      - skill: grill-with-docs
+        role: supporting
+        phase: discover
+      - skill: to-spec
+        role: supporting
+        phase: design
+        condition: "The researched decision becomes a multi-session build"
+      - skill: implement
+        role: supporting
+        phase: implement
+
+  architecture_from_bug:
+    trigger: "Debugging proves the deeper problem is a missing seam or poor module boundary"
+    phases:
+      - skill: diagnosing-bugs
+        role: primary
+        phase: investigate
+      - skill: improve-codebase-architecture
+        role: supporting
+        phase: design
+      - skill: grill-with-docs
+        role: supporting
+        phase: discover
+        condition: "Architecture improvement becomes a concrete change proposal"
+      - skill: to-spec
+        role: supporting
+        phase: design
+        condition: "The change is too large for one implementation session"
+
+  incoming_issue:
+    trigger: "Raw bug report or feature request arrived from another person or external queue"
+    phases:
+      - skill: triage
+        role: primary
+        phase: discover
+      - skill: implement
+        role: supporting
+        phase: implement
+        condition: "Triage has produced an agent-ready issue"
+    rejected_shortcuts:
+      - skill: diagnosing-bugs
+        reason: "Do not assume every incoming issue needs deep debugging before triage"
+
+  huge_foggy_effort:
+    trigger: "Greenfield project or large feature where the path itself is not visible"
+    phases:
+      - skill: wayfinder
+        role: primary
+        phase: discover
+      - skill: to-spec
+        role: supporting
+        phase: design
+      - skill: to-tickets
+        role: supporting
+        phase: plan
+      - skill: implement
+        role: supporting
+        phase: implement
+    rejected_shortcuts:
+      - skill: implement
+        reason: "Do not jump from unresolved decision map directly into broad implementation"
+
+  direct_behavior_change:
+    trigger: "Expected behavior, scope, and acceptance criteria are already concrete"
+    phases:
+      - skill: tdd
+        role: primary
+        phase: implement
+      - skill: code-review
+        role: supporting
+        phase: review
+    alternatives:
+      - skill: implement
+        when: "A full issue workflow, branch lifecycle, and integrated implementation protocol are desired"
+
+  review_only:
+    trigger: "A branch, diff, or pull request must be evaluated against standards and a fixed point"
+    phases:
+      - skill: code-review
+        role: primary
+        phase: review
+
+  conflict_recovery:
+    trigger: "Repository is already inside a merge or rebase conflict"
+    phases:
+      - skill: resolving-merge-conflicts
+        role: primary
+        phase: recover
+
+  human_only_setup:
+    trigger: "Execution is blocked on infrastructure or credential steps only a human can perform"
+    phases:
+      - skill: wizard
+        role: primary
+        phase: operate
+    rejected_shortcuts:
+      - skill: wizard
+        reason: "Do not use if Cursor can complete the operation directly through terminal, API, or existing credentials"
+
+reroute_conditions:
+  - from: investigate
+    to: design
+    when: "Root cause is architectural rather than a local defect"
+  - from: investigate
+    to: implement
+    when: "Root cause is evidenced and expected behavior is clear"
+  - from: research
+    to: discover
+    when: "External evidence is sufficient to make product or design decisions"
+  - from: design
+    to: plan
+    when: "A multi-session implementation has a stable spec"
+  - from: implement
+    to: review
+    when: "Implementation and required verification are complete"
+  - from: review
+    to: operate
+    when: "Change is approved and a deployment or migration is explicitly requested"
