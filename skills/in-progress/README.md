@@ -9,6 +9,7 @@ npx skills@latest add mattpocock/skills --skill=<name>
 ```
 
 - **[skill-router](./skill-router/SKILL.md)**: Mandatory preflight router that discovers available skills, composes the smallest useful flow, rejects plausible wrong alternatives, and locks a Skill Plan before execution.
+- **[cursor-inventory](./cursor-inventory/SKILL.md)**: Inventory Cursor-local Skills and Rules, create a redacted snapshot, and hand it to the Controller through GitHub before canonicalization.
 - **[loop-me](./loop-me/SKILL.md)**: Grill yourself into implementable workflow specs over multiple sessions, using the current directory as a stateful workspace. User-invoked.
 - **[writing-beats](./writing-beats/SKILL.md)**: Shape an article as a journey of beats, choose-your-own-adventure style. Pick a starting beat, write only that beat, then pivot to the next, until the article reaches a natural end.
 - **[writing-fragments](./writing-fragments/SKILL.md)**: Grilling session that mines you for fragments (heterogeneous nuggets of writing) and appends them to a single document as raw material for a future article.
