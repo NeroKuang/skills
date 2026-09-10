@@ -1,0 +1,86 @@
+schema_version: 1
+
+layers:
+  - id: task-contract
+    precedence: 100
+    description: Explicit Controller-approved task contract overrides normal routing when permitted.
+
+  - id: project-local
+    precedence: 80
+    description: Repository-specific skills, rules, and context selected only when project selectors match.
+    selectors:
+      allowed:
+        - repository
+        - path
+        - marker_file
+        - explicit_project_id
+
+  - id: private-user
+    precedence: 60
+    description: Private reusable workflows for the user's own environment and integrations.
+    selection_policy: explicit_capability_or_task_match
+
+  - id: shared-base
+    precedence: 40
+    description: Portable cross-project skills and rules from NeroKuang/skills.
+
+  - id: third-party
+    precedence: 20
+    description: Externally maintained skills admitted through a versioned lock and routing overlay.
+
+resolution_order:
+  - task-contract
+  - project-local
+  - private-user
+  - shared-base
+  - third-party
+
+actors:
+  - controller
+  - executor
+  - both
+
+phases:
+  - discover
+  - research
+  - investigate
+  - design
+  - plan
+  - implement
+  - verify
+  - review
+  - operate
+  - recover
+  - teach
+
+side_effects:
+  - none
+  - local-write
+  - repo-write
+  - external-write
+  - production-write
+
+rule_precedence:
+  - task-contract
+  - project-local-contract
+  - controller-approved-specification
+  - private-user-preference
+  - shared-technology-rule
+  - generic-convention
+
+routing_pipeline:
+  - scope-resolution
+  - actor-resolution
+  - phase-resolution
+  - skill-selection
+  - skill-composition
+  - rule-resolution
+  - execution
+
+invariants:
+  - project_local_items_are_not_candidates_when_selectors_do_not_match
+  - private_user_items_require_relevant_capability_or_explicit_task_match
+  - third_party_items_require_lock_and_routing_overlay
+  - local_install_roots_are_not_canonical_sources
+  - existing_public_contract_beats_generic_style_guidance
+  - safety_constraints_require_framework_authorized_override
