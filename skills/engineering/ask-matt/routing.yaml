@@ -1,0 +1,22 @@
+schema_version: 1
+id: ask-matt
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - human-input
+  - source-read
+side_effects: none
+requires: []
+composes_with:
+  - skill-router
+  - wayfinder
+conflicts_with:
+  - skill-router
+selectors: {}
+source:
+  type: first-party
+priority: 30
+notes: "Human-facing skill chooser; prefer skill-router for autonomous preflight"

@@ -1,0 +1,21 @@
+schema_version: 1
+id: wayfinder
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+  - plan
+capabilities:
+  - human-input
+side_effects: external-write
+requires: []
+composes_with:
+  - to-spec
+  - to-tickets
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55
+notes: "Tracker-agnostic decision-map workflow; local source-read is not universally required"

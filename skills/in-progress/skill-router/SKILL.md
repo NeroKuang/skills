@@ -51,6 +51,10 @@ node tests/routing/run-cases.mjs --demo
 
 `routing.yaml` is routing metadata only. `SKILL.md` remains the behavioral source of truth.
 
+First-party Skills without `routing.yaml` must be listed in `routing/non-routable.yaml` or validation fails.
+
+After selecting a Skill Plan, load only relevant `rules/tech/*.md` files as constraints for the active stack. Technology Rules are not primary Skills.
+
 ## Step 1: Discover and scope-filter the available skill set
 
 Do not route from memory alone.

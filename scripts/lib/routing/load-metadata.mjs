@@ -2,7 +2,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { SCHEMA_VERSION } from './constants.mjs';
+import {
+  findBoundExemption,
+  isCanonicalExemptionPath,
+  loadNonRoutableExemptions,
+} from './exemptions.mjs';
 import { loadYamlFile } from './parse-yaml.mjs';
+
+export {
+  findBoundExemption,
+  isCanonicalExemptionPath,
+  loadNonRoutableExemptions,
+} from './exemptions.mjs';
 
 function toPosix(p) {
   return p.split(path.sep).join('/');
@@ -250,23 +261,52 @@ export function loadRoutingRegistry(repoRoot, options = {}) {
       : path.join(absoluteRoot, 'third-party', 'routing'),
     lock,
   });
+  const exemptions = loadNonRoutableExemptions(absoluteRoot, {
+    exemptionsPath: options.exemptionsPath
+      ? path.resolve(options.exemptionsPath)
+      : undefined,
+  });
 
   const withMetadata = [
     ...firstParty.filter((entry) => entry.metadata_present),
     ...thirdParty,
   ];
 
-  return {
-    repoRoot: absoluteRoot,
-    lock,
-    discovered_without_metadata: firstParty
-      .filter((entry) => !entry.metadata_present)
-      .map((entry) => ({
+  const withoutMetadata = firstParty.filter((entry) => !entry.metadata_present);
+  const exempted = [];
+  const unclassified = [];
+
+  for (const entry of withoutMetadata) {
+    // Hard bind: id AND exact skill_md path must both match one exemption.
+    // Crossed pairs must not exempt either Skill.
+    const exemption = findBoundExemption(entry, exemptions.skills);
+    if (exemption && isCanonicalExemptionPath(exemption.path)) {
+      exempted.push({
+        id: entry.id,
+        skill_md: entry.skill_md,
+        bucket: entry.bucket,
+        reason: exemption.reason || null,
+        exemption_path: exemption.path || null,
+        provenance: entry.provenance,
+      });
+    } else {
+      unclassified.push({
         id: entry.id,
         skill_md: entry.skill_md,
         bucket: entry.bucket,
         provenance: entry.provenance,
-      })),
+      });
+    }
+  }
+
+  return {
+    repoRoot: absoluteRoot,
+    lock,
+    exemptions,
+    // Backward-compatible alias used by Phase A callers/tests.
+    discovered_without_metadata: unclassified,
+    unclassified_first_party: unclassified,
+    exempted_first_party: exempted,
     entries: withMetadata,
   };
 }

@@ -1,0 +1,4 @@
+schema_version: 1
+# Explicit first-party Skills that intentionally do not participate in routing.
+# Every other skills/**/SKILL.md must have routing.yaml.
+skills: []

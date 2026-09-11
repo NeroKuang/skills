@@ -1,0 +1,18 @@
+schema_version: 1
+id: wait-what
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - human-input
+side_effects: none
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 35
+notes: "Interrupt skill to restate misunderstood input"

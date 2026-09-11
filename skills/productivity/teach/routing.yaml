@@ -1,0 +1,19 @@
+schema_version: 1
+id: teach
+scope: shared-base
+actors:
+  - both
+phases:
+  - teach
+capabilities:
+  - human-input
+  - source-read
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

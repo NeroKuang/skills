@@ -1,0 +1,24 @@
+schema_version: 1
+id: tdd
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+  - verify
+capabilities:
+  - source-read
+  - source-write
+  - tests
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with:
+  - code-review
+  - implement
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 65
+notes: "source-read is hard for exploring code/test seams; human-input is not hard when seams are pre-agreed"

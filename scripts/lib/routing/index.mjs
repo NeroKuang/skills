@@ -1,5 +1,6 @@
 export { SCHEMA_VERSION, FILTER_PIPELINE, DEFAULT_INDEX_RELATIVE_PATH } from './constants.mjs';
 export { parseYaml, loadYamlFile } from './parse-yaml.mjs';
+export { loadNonRoutableExemptions, findBoundExemption, isCanonicalExemptionPath } from './exemptions.mjs';
 export {
   loadRoutingRegistry,
   loadFirstPartyRoutingEntries,

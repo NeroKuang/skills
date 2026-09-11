@@ -36,6 +36,8 @@ When permitted, use the available tools to answer executable questions:
 
 Collect evidence before proposing a root cause when practical.
 
+If a material decision remains unresolved after evidence inspection, stop with `STATUS: BLOCKED`, persist evidence and options to GitHub, and wait for Controller decision. Do not ask the human to shuttle messages between agents as the default path.
+
 ## Scope control
 
 You may choose implementation details inside approved requirements and architecture.
@@ -51,6 +53,23 @@ Do not silently change:
 - authorized side effects
 
 Report adjacent findings separately.
+
+Read before edit. Prefer minimal diffs. Do not expand into unrelated refactors.
+
+## Technology Rule loading
+
+After Skill Preflight selects the workflow, load relevant files from `rules/tech/` based on the active task and files:
+
+- UI / frontend files -> `rules/tech/frontend.md`
+- Go files -> `rules/tech/go.md`
+- Python files -> `rules/tech/python.md`
+- Laravel / PHP application work -> `rules/tech/laravel.md`
+- HTTP API design or contract changes -> `rules/tech/api-design.md`
+- list/pagination SQL safety -> `rules/tech/mysql-query-safety.md`
+
+These Rules constrain execution. They are not primary Skills and must not all be loaded globally.
+
+For API work, existing public contracts and Controller-approved specifications override generic shared conventions.
 
 ## Skill refinement
 
@@ -148,6 +167,17 @@ KNOWN LIMITATIONS
 RISKS
 ...
 ```
+
+## Self-verification before completion
+
+Before reporting READY_FOR_REVIEW or COMPLETE, run one self-verification pass:
+
+1. requirements / acceptance criteria covered
+2. evidence supports the claim
+3. relevant tests or checks executed or honestly reported as not run
+4. no secrets or private intake details leaked
+
+Do not emit a duplicate restated answer solely to "double-check".
 
 ## Side effects
 
