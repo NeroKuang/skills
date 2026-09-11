@@ -1,0 +1,19 @@
+schema_version: 1
+id: shared-impl
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - source-write
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40
+notes: "Synthetic shared-base fallback fixture"

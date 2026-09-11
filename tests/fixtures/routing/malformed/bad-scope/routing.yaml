@@ -1,0 +1,16 @@
+schema_version: 1
+id: bad-scope
+scope: galaxy-local
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - terminal
+side_effects: none
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party

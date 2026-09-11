@@ -1,0 +1,16 @@
+schema_version: 1
+id: bad-phase
+scope: shared-base
+actors:
+  - executor
+phases:
+  - not-a-real-phase
+capabilities:
+  - terminal
+side_effects: none
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party

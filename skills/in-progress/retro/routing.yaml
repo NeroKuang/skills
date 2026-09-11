@@ -1,0 +1,19 @@
+schema_version: 1
+id: retro
+scope: shared-base
+actors:
+  - both
+phases:
+  - review
+capabilities:
+  - source-read
+  - human-input
+side_effects: none
+requires: []
+composes_with:
+  - code-review
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

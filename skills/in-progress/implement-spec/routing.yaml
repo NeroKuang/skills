@@ -1,0 +1,23 @@
+schema_version: 1
+id: implement-spec
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - source-read
+  - source-write
+  - terminal
+  - git-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - implement
+  - tdd
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 45
+notes: "Hard caps include reading specs and git branch/worktree/merge work; PR host is not a hard github-* cap"

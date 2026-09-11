@@ -1,0 +1,21 @@
+schema_version: 1
+id: example-synth-research
+scope: third-party
+actors:
+  - both
+phases:
+  - research
+capabilities:
+  - external-research
+side_effects: none
+requires: []
+composes_with: []
+conflicts_with: []
+selectors:
+  explicit_capabilities:
+    - external-research
+source:
+  type: third-party
+  repository: https://github.com/example/synth-research-skill
+  ref: 1a2b3c4d5e6f7890
+notes: "Synthetic admitted third-party overlay"

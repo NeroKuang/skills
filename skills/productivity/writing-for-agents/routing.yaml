@@ -1,0 +1,21 @@
+schema_version: 1
+id: writing-for-agents
+scope: shared-base
+actors:
+  - both
+phases:
+  - implement
+  - review
+capabilities:
+  - source-read
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - writing-shape
+  - writing-beats
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 50

@@ -1,0 +1,21 @@
+schema_version: 1
+id: to-spec
+scope: shared-base
+actors:
+  - both
+phases:
+  - design
+capabilities:
+  - source-read
+  - human-input
+side_effects: external-write
+requires: []
+composes_with:
+  - to-tickets
+  - grill-with-docs
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55
+notes: "Tracker-agnostic; source-write is backend-dependent and not a universal hard capability"

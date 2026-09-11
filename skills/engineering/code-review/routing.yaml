@@ -1,0 +1,20 @@
+schema_version: 1
+id: code-review
+scope: shared-base
+actors:
+  - both
+phases:
+  - review
+capabilities:
+  - source-read
+  - git-read
+side_effects: none
+requires: []
+composes_with:
+  - tdd
+  - implement
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 60

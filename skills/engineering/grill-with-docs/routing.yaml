@@ -1,0 +1,25 @@
+schema_version: 1
+id: grill-with-docs
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+  - design
+capabilities:
+  - human-input
+  - source-read
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - to-spec
+  - prototype
+  - domain-modeling
+conflicts_with:
+  - grill-me
+selectors: {}
+source:
+  type: first-party
+priority: 65
+notes: "Hard caps include source-write because durable docs are part of the workflow"

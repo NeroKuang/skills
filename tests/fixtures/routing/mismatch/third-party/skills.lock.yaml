@@ -1,0 +1,7 @@
+schema_version: 1
+skills:
+  - id: mismatched-research
+    source: https://github.com/example/locked-research-skill
+    ref: lock-ref-aaaa
+    trust: third-party
+    routing_metadata: third-party/routing/mismatched-research.yaml

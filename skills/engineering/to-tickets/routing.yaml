@@ -1,0 +1,20 @@
+schema_version: 1
+id: to-tickets
+scope: shared-base
+actors:
+  - both
+phases:
+  - plan
+capabilities:
+  - human-input
+side_effects: external-write
+requires: []
+composes_with:
+  - implement
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55
+notes: "Tracker-agnostic; source-read is optional exploration, not a hard capability"

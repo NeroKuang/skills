@@ -1,0 +1,21 @@
+schema_version: 1
+id: writing-beats
+scope: shared-base
+actors:
+  - both
+phases:
+  - implement
+capabilities:
+  - source-read
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - writing-fragments
+  - writing-shape
+  - writing-for-agents
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

@@ -1,0 +1,19 @@
+schema_version: 1
+id: grilling
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - human-input
+side_effects: none
+requires: []
+composes_with:
+  - grill-me
+  - grill-with-docs
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 45

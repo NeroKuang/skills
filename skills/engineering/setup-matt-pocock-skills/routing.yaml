@@ -1,0 +1,23 @@
+schema_version: 1
+id: setup-matt-pocock-skills
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - source-read
+  - human-input
+  - source-write
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with:
+  - triage
+  - domain-modeling
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40
+notes: "Reads repo/git config, confirms with human, writes scaffold; git-write is not required"

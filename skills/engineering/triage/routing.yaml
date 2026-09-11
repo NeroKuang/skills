@@ -1,0 +1,21 @@
+schema_version: 1
+id: triage
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - source-read
+  - human-input
+side_effects: external-write
+requires: []
+composes_with:
+  - implement
+conflicts_with:
+  - diagnosing-bugs
+selectors: {}
+source:
+  type: first-party
+priority: 60
+notes: "Tracker-agnostic; issue-tracker backend is resolved from docs/agents configuration"

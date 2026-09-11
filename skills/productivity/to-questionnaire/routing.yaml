@@ -1,0 +1,20 @@
+schema_version: 1
+id: to-questionnaire
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+  - plan
+capabilities:
+  - human-input
+  - source-write
+side_effects: local-write
+requires: []
+composes_with:
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

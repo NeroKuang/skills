@@ -1,0 +1,19 @@
+schema_version: 1
+id: skill-router
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - source-read
+side_effects: none
+requires: []
+composes_with:
+  - ask-matt
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 90
+notes: "Mandatory preflight router; not a normal primary for feature work"
