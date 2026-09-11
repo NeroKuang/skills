@@ -211,7 +211,6 @@ phases: [investigate]
 capabilities:
   - source-read
   - terminal
-  - tests
 side_effects: none
 requires: []
 composes_with:
@@ -223,6 +222,8 @@ selectors: {}
 source:
   type: first-party
 ```
+
+`capabilities` lists only hard execution requirements. Optional feedback-loop tools such as `tests` stay out of this example.
 
 Fields:
 

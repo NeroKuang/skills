@@ -738,7 +738,7 @@ function caseQ() {
   assert.ok(toSpec.capabilities.includes('source-read'));
   assert.ok(toSpec.capabilities.includes('human-input'));
   assert.ok(toSpec.capabilities.includes('source-write'));
-  assert.ok(toSpec.capabilities.includes('github-write'));
+  assert.equal(toSpec.capabilities.includes('github-write'), false);
 
   const diagnosing = byId.get('diagnosing-bugs');
   assert.ok(diagnosing);
@@ -763,6 +763,65 @@ function caseQ() {
   };
 }
 
+function caseR() {
+  const registry = loadRoutingRegistry(repoRoot);
+  const byId = new Map(registry.entries.map((entry) => [entry.id, entry]));
+
+  const trackerNeutral = ['to-spec', 'to-tickets', 'triage', 'wayfinder'];
+  for (const id of trackerNeutral) {
+    const entry = byId.get(id);
+    assert.ok(entry, `Case R: missing ${id}`);
+    assert.equal(entry.capabilities.includes('github-read'), false, `${id} must not hard-require github-read`);
+    assert.equal(entry.capabilities.includes('github-write'), false, `${id} must not hard-require github-write`);
+  }
+
+  // Without github-* available, tracker-agnostic Skills must still survive capability filtering.
+  const candidates = resolveSkillCandidates(
+    trackerNeutral.map((id) => byId.get(id)),
+    {
+      actor: 'both',
+      phase: 'design',
+      capabilities: ['source-read', 'source-write', 'human-input'],
+    },
+  );
+  assert.ok(candidates.candidate_ids.includes('to-spec'));
+
+  const setup = byId.get('setup-matt-pocock-skills');
+  assert.ok(setup.capabilities.includes('source-read'));
+  assert.ok(setup.capabilities.includes('human-input'));
+  assert.ok(setup.capabilities.includes('source-write'));
+  assert.ok(setup.capabilities.includes('terminal'));
+  assert.equal(setup.capabilities.includes('git-write'), false);
+
+  const implementSpec = byId.get('implement-spec');
+  assert.ok(implementSpec.capabilities.includes('source-read'));
+  assert.ok(implementSpec.capabilities.includes('git-write'));
+  assert.ok(implementSpec.capabilities.includes('source-write'));
+  assert.ok(implementSpec.capabilities.includes('terminal'));
+  assert.equal(implementSpec.capabilities.includes('github-write'), false);
+
+  const wizard = byId.get('wizard');
+  assert.ok(wizard.capabilities.includes('source-read'));
+  assert.ok(wizard.capabilities.includes('terminal'));
+  assert.ok(wizard.capabilities.includes('source-write'));
+  assert.ok(wizard.capabilities.includes('human-input'));
+
+  const tdd = byId.get('tdd');
+  assert.ok(tdd.capabilities.includes('source-read'));
+  assert.ok(tdd.capabilities.includes('source-write'));
+  assert.ok(tdd.capabilities.includes('tests'));
+  assert.ok(tdd.capabilities.includes('terminal'));
+  assert.equal(tdd.capabilities.includes('human-input'), false);
+
+  return {
+    name: 'R',
+    title: 'tracker-neutral and remaining hard-capability cleanup',
+    result: 'PASS',
+    detail:
+      'tracker-agnostic Skills accept non-GitHub capability sets; setup/implement-spec/wizard/tdd hard caps corrected',
+  };
+}
+
 function main() {
   const demo = process.argv.includes('--demo');
   const cases = [
@@ -783,6 +842,7 @@ function main() {
     caseO,
     caseP,
     caseQ,
+    caseR,
   ];
   const results = [];
 

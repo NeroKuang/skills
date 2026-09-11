@@ -6,8 +6,9 @@ actors:
 phases:
   - operate
 capabilities:
-  - terminal
+  - source-read
   - source-write
+  - terminal
 side_effects: local-write
 requires: []
 composes_with:

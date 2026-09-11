@@ -6,8 +6,8 @@ actors:
 phases:
   - plan
 capabilities:
-  - github-write
   - source-read
+  - human-input
 side_effects: external-write
 requires: []
 composes_with:
@@ -18,3 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
+notes: "Tracker-agnostic; do not hard-require github-* because GitHub/GitLab/local trackers are alternatives"

@@ -31,7 +31,6 @@ phases:
 capabilities:
   - source-read
   - terminal
-  - tests
 side_effects: none
 requires: []
 composes_with:
@@ -43,6 +42,8 @@ selectors: {}
 source:
   type: first-party
 ```
+
+`tests` is intentionally omitted from this example. Feedback loops may use tests, curl, CLI, browser, or traces; only universally required capabilities belong here.
 
 ## Field semantics
 
@@ -100,6 +101,8 @@ Hard execution capabilities required to run the Skill in the current environment
 The router treats this list as a hard AND filter: every listed capability must be available, or the Skill is excluded before semantic selection.
 
 Do not list optional or "materially used" tools here. Optional tools belong in Skill prose or composition edges, not in hard capability requirements.
+
+Tracker-agnostic Skills (for example issue triage, ticketing, wayfinding, or spec publication) must not hard-code `github-read` / `github-write`. Configured tracker access is resolved by the Skill and task context until the framework defines a generic tracker capability abstraction.
 
 Initial vocabulary:
 

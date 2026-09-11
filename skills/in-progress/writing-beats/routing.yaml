@@ -6,6 +6,7 @@ actors:
 phases:
   - implement
 capabilities:
+  - source-read
   - source-write
 side_effects: repo-write
 requires: []

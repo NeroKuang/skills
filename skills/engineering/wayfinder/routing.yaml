@@ -7,7 +7,7 @@ phases:
   - discover
   - plan
 capabilities:
-  - github-write
+  - source-read
   - human-input
 side_effects: external-write
 requires: []
@@ -19,3 +19,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
+notes: "Tracker-agnostic decision-map workflow; no hard github-* capability"

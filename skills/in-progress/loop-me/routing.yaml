@@ -7,6 +7,7 @@ phases:
   - discover
 capabilities:
   - human-input
+  - source-read
   - source-write
 side_effects: repo-write
 requires: []

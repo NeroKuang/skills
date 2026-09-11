@@ -7,6 +7,7 @@ phases:
   - implement
   - verify
 capabilities:
+  - source-read
   - source-write
   - tests
   - terminal
@@ -20,3 +21,4 @@ selectors: {}
 source:
   type: first-party
 priority: 65
+notes: "source-read is hard for exploring code/test seams; human-input is not hard when seams are pre-agreed"

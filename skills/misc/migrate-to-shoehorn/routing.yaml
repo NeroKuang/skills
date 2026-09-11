@@ -6,6 +6,7 @@ actors:
 phases:
   - implement
 capabilities:
+  - source-read
   - source-write
   - tests
   - terminal

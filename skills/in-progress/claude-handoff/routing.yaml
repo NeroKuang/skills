@@ -6,6 +6,7 @@ actors:
 phases:
   - operate
 capabilities:
+  - source-read
   - source-write
   - terminal
 side_effects: local-write

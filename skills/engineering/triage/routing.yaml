@@ -6,8 +6,7 @@ actors:
 phases:
   - discover
 capabilities:
-  - github-read
-  - github-write
+  - source-read
   - human-input
 side_effects: external-write
 requires: []
@@ -19,3 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 60
+notes: "Tracker-agnostic; issue-tracker backend is resolved from docs/agents configuration"

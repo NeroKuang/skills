@@ -7,7 +7,9 @@ phases:
   - operate
 capabilities:
   - human-input
+  - source-read
   - source-write
+  - terminal
 side_effects: local-write
 requires: []
 composes_with: []
@@ -16,4 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 50
-notes: "Human-only infrastructure steps the executor cannot perform directly"
+notes: "Reads repo/config/template, writes wizard, verifies with bash -n/shellcheck via terminal"
