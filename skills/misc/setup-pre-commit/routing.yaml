@@ -1,0 +1,20 @@
+schema_version: 1
+id: setup-pre-commit
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - source-write
+  - terminal
+  - tests
+side_effects: repo-write
+requires: []
+composes_with:
+  - git-guardrails-claude-code
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

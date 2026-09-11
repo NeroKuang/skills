@@ -1,0 +1,23 @@
+schema_version: 1
+id: implement
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - source-read
+  - source-write
+  - terminal
+  - tests
+  - git-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - tdd
+  - code-review
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 60

@@ -1,0 +1,19 @@
+schema_version: 1
+id: wizard
+scope: shared-base
+actors:
+  - both
+phases:
+  - operate
+capabilities:
+  - human-input
+  - source-write
+side_effects: local-write
+requires: []
+composes_with: []
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 50
+notes: "Human-only infrastructure steps the executor cannot perform directly"

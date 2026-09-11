@@ -1,0 +1,22 @@
+schema_version: 1
+id: tdd
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+  - verify
+capabilities:
+  - source-write
+  - tests
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with:
+  - code-review
+  - implement
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 65

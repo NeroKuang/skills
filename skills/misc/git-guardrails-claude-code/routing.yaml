@@ -1,0 +1,19 @@
+schema_version: 1
+id: git-guardrails-claude-code
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - terminal
+  - source-write
+side_effects: local-write
+requires: []
+composes_with:
+  - setup-pre-commit
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

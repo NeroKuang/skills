@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   assertNotVisibleAfterScope,
+  buildSkillIndex,
   loadRoutingRegistry,
   resolveSkillCandidates,
   validateRoutingRegistry,
@@ -421,9 +422,202 @@ function caseI() {
   };
 }
 
+function caseJ() {
+  const registry = loadRoutingRegistry(repoRoot);
+  const validation = validateRoutingRegistry(registry, { repoRoot });
+  assert.equal(validation.ok, true, 'Case J: repository classification must PASS');
+  assert.equal((registry.unclassified_first_party || []).length, 0);
+  assert.ok(registry.entries.length >= 39, 'Case J: expected first-party metadata backfill');
+  const { index } = buildSkillIndex(repoRoot);
+  assert.equal(index.counts.without_metadata, 0);
+  assert.equal(index.skills.length, index.counts.routable);
+
+  return {
+    name: 'J',
+    title: 'complete first-party classification',
+    result: 'PASS',
+    detail: `routable=${index.counts.routable}, exempted=${index.counts.exempted}, unclassified=0`,
+  };
+}
+
+function caseK() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-b-unclassified-'));
+  const outputPath = path.join(tempRoot, 'skill-index.json');
+  try {
+    writeEmptyThirdParty(tempRoot);
+    fs.mkdirSync(path.join(tempRoot, 'routing'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tempRoot, 'routing/non-routable.yaml'),
+      'schema_version: 1\nskills: []\n',
+      'utf8',
+    );
+    const skillDir = path.join(tempRoot, 'skills/engineering/orphan-skill');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: orphan-skill\ndescription: Missing metadata fixture.\n---\n\n# Orphan\n',
+      'utf8',
+    );
+
+    const registry = loadRoutingRegistry(tempRoot);
+    const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
+    assert.equal(validation.ok, false);
+    assert.ok(
+      validation.errors.some((err) => /unclassified/.test(err.message)),
+      'Case K: unclassified first-party must fail validation',
+    );
+
+    let threw = false;
+    try {
+      writeSkillIndex(tempRoot, { outputRelativePath: outputPath });
+    } catch (err) {
+      threw = true;
+      assert.equal(err.code, 'ROUTING_VALIDATION_FAILED');
+    }
+    assert.equal(threw, true);
+    assert.equal(fs.existsSync(outputPath), false);
+
+    return {
+      name: 'K',
+      title: 'missing first-party classification fails',
+      result: 'PASS',
+      detail: 'SKILL.md without routing.yaml or exemption fails validation and build-index',
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseL() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-b-bad-exemption-'));
+  try {
+    writeEmptyThirdParty(tempRoot);
+    fs.mkdirSync(path.join(tempRoot, 'routing'), { recursive: true });
+    fs.mkdirSync(path.join(tempRoot, 'skills/engineering'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tempRoot, 'routing/non-routable.yaml'),
+      [
+        'schema_version: 1',
+        'skills:',
+        '  - id: missing-skill',
+        '    path: skills/engineering/missing-skill/SKILL.md',
+        '    reason: stale exemption for Case L',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const registry = loadRoutingRegistry(tempRoot);
+    const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
+    assert.equal(validation.ok, false);
+    assert.ok(
+      validation.errors.some(
+        (err) =>
+          err.id === 'missing-skill' &&
+          /does not exist|does not match a discovered first-party Skill/.test(err.message),
+      ),
+      'Case L: invalid exemption must fail validation',
+    );
+
+    return {
+      name: 'L',
+      title: 'invalid exemption fails',
+      result: 'PASS',
+      detail: 'stale/missing exemption path fails validation',
+      errors: validation.errors.map((err) => `${err.id}: ${err.message}`),
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseM() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-b-exempt-'));
+  try {
+    writeEmptyThirdParty(tempRoot);
+    fs.mkdirSync(path.join(tempRoot, 'routing'), { recursive: true });
+    const skillDir = path.join(tempRoot, 'skills/misc/legacy-compat');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: legacy-compat\ndescription: Explicitly non-routable fixture.\n---\n\n# Legacy Compat\n',
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(tempRoot, 'routing/non-routable.yaml'),
+      [
+        'schema_version: 1',
+        'skills:',
+        '  - id: legacy-compat',
+        '    path: skills/misc/legacy-compat/SKILL.md',
+        '    reason: compatibility-only fixture excluded from routing',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const registry = loadRoutingRegistry(tempRoot);
+    const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
+    assert.equal(validation.ok, true, 'Case M: valid exemption must PASS validation');
+    assert.equal(registry.entries.some((entry) => entry.id === 'legacy-compat'), false);
+    assert.ok(registry.exempted_first_party.some((entry) => entry.id === 'legacy-compat'));
+
+    const { index } = buildSkillIndex(tempRoot);
+    assert.equal(index.skills.some((entry) => entry.id === 'legacy-compat'), false);
+    assert.ok(index.exempted_first_party.some((entry) => entry.id === 'legacy-compat'));
+
+    const resolved = resolveSkillCandidates(registry.entries, {
+      actor: 'executor',
+      phase: 'implement',
+      capabilities: ['terminal'],
+      taskContract: { includeSkills: ['legacy-compat'] },
+    });
+    assert.equal(resolved.candidate_ids.includes('legacy-compat'), false);
+
+    return {
+      name: 'M',
+      title: 'exempt Skill stays out of candidates/index skills',
+      result: 'PASS',
+      detail:
+        'legacy-compat appears in exempted_first_party only; absent from routable skills and resolver candidates',
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseN() {
+  const phaseA = [caseA, caseB, caseC, caseD, caseE, caseF, caseG, caseH, caseI];
+  const results = phaseA.map((run) => run());
+  assert.equal(results.length, 9);
+  assert.ok(results.every((item) => item.result === 'PASS'));
+
+  return {
+    name: 'N',
+    title: 'Phase A admission invariants survive metadata backfill',
+    result: 'PASS',
+    detail: 'Cases A-I re-executed in-process: 9/9 PASS',
+  };
+}
+
 function main() {
   const demo = process.argv.includes('--demo');
-  const cases = [caseA, caseB, caseC, caseD, caseE, caseF, caseG, caseH, caseI];
+  const cases = [
+    caseA,
+    caseB,
+    caseC,
+    caseD,
+    caseE,
+    caseF,
+    caseG,
+    caseH,
+    caseI,
+    caseJ,
+    caseK,
+    caseL,
+    caseM,
+    caseN,
+  ];
   const results = [];
 
   for (const run of cases) {

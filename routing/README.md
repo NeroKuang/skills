@@ -41,3 +41,5 @@ node tests/routing/run-cases.mjs --demo
 - Matching project-local Skills may still receive task-contract precedence when explicitly included.
 - Lock and overlay `source` / `ref` must agree; the lock is authoritative.
 - `build-skill-index` validates metadata before writing and fails closed on invalid input.
+- Every first-party `skills/**/SKILL.md` must have `routing.yaml` or an explicit entry in `routing/non-routable.yaml`.
+- Generated indexes separate routable `skills` from `exempted_first_party`.

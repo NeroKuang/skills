@@ -58,9 +58,16 @@ export function buildSkillIndex(repoRoot, options = {}) {
   }
 
   const routable = stableSort(registry.entries).map(publicEntry);
-  const withoutMetadata = [...(registry.discovered_without_metadata || [])].sort((a, b) =>
-    String(a.id).localeCompare(String(b.id)),
-  );
+  const exempted = stableSort(registry.exempted_first_party || []).map((entry) => ({
+    id: entry.id,
+    skill_md: entry.skill_md,
+    bucket: entry.bucket,
+    reason: entry.reason,
+    exemption_path: entry.exemption_path,
+  }));
+  const unclassified = [
+    ...(registry.unclassified_first_party || registry.discovered_without_metadata || []),
+  ].sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
   const index = {
     schema_version: SCHEMA_VERSION,
@@ -70,6 +77,7 @@ export function buildSkillIndex(repoRoot, options = {}) {
       first_party_root: 'skills/',
       third_party_lock: 'third-party/skills.lock.yaml',
       third_party_overlays: 'third-party/routing/',
+      non_routable_exemptions: 'routing/non-routable.yaml',
       non_canonical_roots: ['~/.cursor/skills', '~/.agents/skills'],
     },
     lock: {
@@ -85,10 +93,12 @@ export function buildSkillIndex(repoRoot, options = {}) {
         .sort((a, b) => String(a.id).localeCompare(String(b.id))),
     },
     skills: routable,
-    discovered_without_metadata: withoutMetadata,
+    exempted_first_party: exempted,
+    discovered_without_metadata: unclassified,
     counts: {
       routable: routable.length,
-      without_metadata: withoutMetadata.length,
+      exempted: exempted.length,
+      without_metadata: unclassified.length,
       third_party_locked: (registry.lock.skills || []).length,
     },
   };

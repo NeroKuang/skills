@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { SCHEMA_VERSION } from './constants.mjs';
+import { loadNonRoutableExemptions } from './exemptions.mjs';
 import { loadYamlFile } from './parse-yaml.mjs';
 
 function toPosix(p) {
@@ -250,23 +251,58 @@ export function loadRoutingRegistry(repoRoot, options = {}) {
       : path.join(absoluteRoot, 'third-party', 'routing'),
     lock,
   });
+  const exemptions = loadNonRoutableExemptions(absoluteRoot, {
+    exemptionsPath: options.exemptionsPath
+      ? path.resolve(options.exemptionsPath)
+      : undefined,
+  });
+
+  const exemptionById = new Map();
+  const exemptionByPath = new Map();
+  for (const item of exemptions.skills) {
+    if (item.id) exemptionById.set(item.id, item);
+    if (item.path) exemptionByPath.set(item.path, item);
+  }
 
   const withMetadata = [
     ...firstParty.filter((entry) => entry.metadata_present),
     ...thirdParty,
   ];
 
-  return {
-    repoRoot: absoluteRoot,
-    lock,
-    discovered_without_metadata: firstParty
-      .filter((entry) => !entry.metadata_present)
-      .map((entry) => ({
+  const withoutMetadata = firstParty.filter((entry) => !entry.metadata_present);
+  const exempted = [];
+  const unclassified = [];
+
+  for (const entry of withoutMetadata) {
+    const exemption =
+      exemptionById.get(entry.id) || exemptionByPath.get(entry.skill_md) || null;
+    if (exemption) {
+      exempted.push({
+        id: entry.id,
+        skill_md: entry.skill_md,
+        bucket: entry.bucket,
+        reason: exemption.reason || null,
+        exemption_path: exemption.path || null,
+        provenance: entry.provenance,
+      });
+    } else {
+      unclassified.push({
         id: entry.id,
         skill_md: entry.skill_md,
         bucket: entry.bucket,
         provenance: entry.provenance,
-      })),
+      });
+    }
+  }
+
+  return {
+    repoRoot: absoluteRoot,
+    lock,
+    exemptions,
+    // Backward-compatible alias used by Phase A callers/tests.
+    discovered_without_metadata: unclassified,
+    unclassified_first_party: unclassified,
+    exempted_first_party: exempted,
     entries: withMetadata,
   };
 }

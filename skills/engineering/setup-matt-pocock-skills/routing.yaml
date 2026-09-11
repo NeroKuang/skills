@@ -1,0 +1,21 @@
+schema_version: 1
+id: setup-matt-pocock-skills
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - source-write
+  - terminal
+  - git-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - triage
+  - domain-modeling
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

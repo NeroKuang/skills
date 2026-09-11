@@ -1,0 +1,21 @@
+schema_version: 1
+id: migrate-to-shoehorn
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - source-write
+  - tests
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with:
+  - tdd
+  - code-review
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

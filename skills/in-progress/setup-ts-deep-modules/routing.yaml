@@ -1,0 +1,20 @@
+schema_version: 1
+id: setup-ts-deep-modules
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+  - implement
+capabilities:
+  - source-write
+  - terminal
+side_effects: repo-write
+requires: []
+composes_with:
+  - codebase-design
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

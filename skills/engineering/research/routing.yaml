@@ -1,0 +1,20 @@
+schema_version: 1
+id: research
+scope: shared-base
+actors:
+  - both
+phases:
+  - research
+capabilities:
+  - external-research
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - grill-with-docs
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 60

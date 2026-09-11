@@ -1,0 +1,20 @@
+schema_version: 1
+id: to-tickets
+scope: shared-base
+actors:
+  - both
+phases:
+  - plan
+capabilities:
+  - github-write
+  - source-read
+side_effects: external-write
+requires: []
+composes_with:
+  - implement
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55

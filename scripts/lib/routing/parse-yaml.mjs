@@ -37,6 +37,17 @@ function parseScalar(raw) {
     if (!inner) return [];
     return inner.split(',').map((part) => parseScalar(part.trim()));
   }
+  if (value.startsWith('{') && value.endsWith('}')) {
+    const inner = value.slice(1, -1).trim();
+    if (!inner) return {};
+    const obj = {};
+    for (const part of inner.split(',')) {
+      const idx = part.indexOf(':');
+      if (idx === -1) continue;
+      obj[part.slice(0, idx).trim()] = parseScalar(part.slice(idx + 1).trim());
+    }
+    return obj;
+  }
   return value;
 }
 

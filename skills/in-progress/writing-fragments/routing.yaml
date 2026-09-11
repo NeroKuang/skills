@@ -1,0 +1,19 @@
+schema_version: 1
+id: writing-fragments
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - writing-beats
+  - writing-shape
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

@@ -1,0 +1,21 @@
+schema_version: 1
+id: improve-codebase-architecture
+scope: shared-base
+actors:
+  - executor
+phases:
+  - design
+capabilities:
+  - source-read
+  - terminal
+side_effects: local-write
+requires: []
+composes_with:
+  - codebase-design
+  - grill-with-docs
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55

@@ -1,0 +1,21 @@
+schema_version: 1
+id: triage
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - github-read
+  - github-write
+  - human-input
+side_effects: external-write
+requires: []
+composes_with:
+  - implement
+conflicts_with:
+  - diagnosing-bugs
+selectors: {}
+source:
+  type: first-party
+priority: 60

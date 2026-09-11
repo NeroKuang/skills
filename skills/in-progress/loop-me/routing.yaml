@@ -1,0 +1,20 @@
+schema_version: 1
+id: loop-me
+scope: shared-base
+actors:
+  - both
+phases:
+  - discover
+capabilities:
+  - human-input
+  - source-write
+side_effects: repo-write
+requires: []
+composes_with:
+  - grilling
+  - to-spec
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40

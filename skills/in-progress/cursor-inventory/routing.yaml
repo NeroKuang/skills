@@ -1,0 +1,21 @@
+schema_version: 1
+id: cursor-inventory
+scope: shared-base
+actors:
+  - executor
+phases:
+  - discover
+  - operate
+capabilities:
+  - source-read
+  - terminal
+side_effects: local-write
+requires: []
+composes_with:
+  - skill-router
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 35
+notes: "Inventory/redaction helper for framework intake evidence"

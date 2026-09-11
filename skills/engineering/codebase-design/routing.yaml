@@ -1,0 +1,19 @@
+schema_version: 1
+id: codebase-design
+scope: shared-base
+actors:
+  - both
+phases:
+  - design
+capabilities:
+  - source-read
+side_effects: none
+requires: []
+composes_with:
+  - improve-codebase-architecture
+  - grill-with-docs
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 55

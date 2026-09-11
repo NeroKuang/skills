@@ -32,13 +32,22 @@ function hasProjectSelector(selectors = {}) {
 
 function collectKnownIds(registry) {
   const ids = new Set();
-  for (const entry of registry.entries) {
+  for (const entry of registry.entries || []) {
     if (entry.id) ids.add(entry.id);
   }
   for (const entry of registry.discovered_without_metadata || []) {
     if (entry.id) ids.add(entry.id);
   }
+  for (const entry of registry.unclassified_first_party || []) {
+    if (entry.id) ids.add(entry.id);
+  }
+  for (const entry of registry.exempted_first_party || []) {
+    if (entry.id) ids.add(entry.id);
+  }
   for (const item of registry.lock?.skills || []) {
+    if (item.id) ids.add(item.id);
+  }
+  for (const item of registry.exemptions?.skills || []) {
     if (item.id) ids.add(item.id);
   }
   return ids;
@@ -72,6 +81,86 @@ function validateCompositionRefs(entry, knownIds, errors) {
   }
 }
 
+function validateExemptions(registry, root, errors) {
+  const exemptions = registry.exemptions?.skills || [];
+  const seenIds = new Map();
+  const seenPaths = new Map();
+  const firstPartyIds = new Set([
+    ...(registry.entries || [])
+      .filter(
+        (entry) =>
+          entry.provenance?.kind === 'first-party' || entry.source?.type === 'first-party',
+      )
+      .map((entry) => entry.id),
+    ...(registry.unclassified_first_party || []).map((entry) => entry.id),
+    ...(registry.exempted_first_party || []).map((entry) => entry.id),
+  ]);
+  const firstPartyPaths = new Set([
+    ...(registry.entries || []).filter((entry) => entry.skill_md).map((entry) => entry.skill_md),
+    ...(registry.unclassified_first_party || []).map((entry) => entry.skill_md),
+    ...(registry.exempted_first_party || []).map((entry) => entry.skill_md),
+  ]);
+
+  for (const item of exemptions) {
+    if (!item.id) {
+      pushError(errors, null, 'non-routable exemption missing id');
+      continue;
+    }
+    if (!item.path) {
+      pushError(errors, item.id, 'non-routable exemption missing path');
+    }
+    if (!item.reason || !String(item.reason).trim()) {
+      pushError(errors, item.id, 'non-routable exemption missing reason');
+    }
+
+    if (seenIds.has(item.id)) {
+      pushError(
+        errors,
+        item.id,
+        `duplicate non-routable exemption id (also ${seenIds.get(item.id)})`,
+      );
+    } else {
+      seenIds.set(item.id, item.path || '<missing-path>');
+    }
+
+    if (item.path) {
+      if (seenPaths.has(item.path)) {
+        pushError(
+          errors,
+          item.id,
+          `duplicate non-routable exemption path (also ${seenPaths.get(item.path)})`,
+        );
+      } else {
+        seenPaths.set(item.path, item.id);
+      }
+
+      const absolute = path.isAbsolute(item.path) ? item.path : path.join(root, item.path);
+      if (!fs.existsSync(absolute)) {
+        pushError(errors, item.id, `non-routable exemption path does not exist: ${item.path}`);
+      } else if (!firstPartyPaths.has(item.path) && !firstPartyIds.has(item.id)) {
+        pushError(
+          errors,
+          item.id,
+          `non-routable exemption does not match a discovered first-party Skill (${item.path})`,
+        );
+      }
+    }
+
+    const routable = (registry.entries || []).find(
+      (entry) =>
+        entry.id === item.id &&
+        (entry.provenance?.kind === 'first-party' || entry.source?.type === 'first-party'),
+    );
+    if (routable) {
+      pushError(
+        errors,
+        item.id,
+        'non-routable exemption conflicts with existing first-party routing.yaml',
+      );
+    }
+  }
+}
+
 export function validateRoutingRegistry(registry, { repoRoot } = {}) {
   const errors = [];
   const warnings = [];
@@ -86,11 +175,7 @@ export function validateRoutingRegistry(registry, { repoRoot } = {}) {
     }
 
     if (seen.has(entry.id)) {
-      pushError(
-        errors,
-        entry.id,
-        `duplicate skill id (also at ${seen.get(entry.id)})`,
-      );
+      pushError(errors, entry.id, `duplicate skill id (also at ${seen.get(entry.id)})`);
     } else {
       seen.set(entry.id, entry.routing_path || entry.skill_md || '<memory>');
     }
@@ -216,11 +301,16 @@ export function validateRoutingRegistry(registry, { repoRoot } = {}) {
     }
   }
 
-  for (const missing of registry.discovered_without_metadata || []) {
-    warnings.push({
-      id: missing.id,
-      message: `first-party skill has SKILL.md but no routing.yaml (${missing.skill_md})`,
-    });
+  validateExemptions(registry, root, errors);
+
+  const unclassified =
+    registry.unclassified_first_party || registry.discovered_without_metadata || [];
+  for (const missing of unclassified) {
+    pushError(
+      errors,
+      missing.id,
+      `first-party skill is unclassified: missing routing.yaml and no non-routable exemption (${missing.skill_md})`,
+    );
   }
 
   return {
@@ -229,7 +319,9 @@ export function validateRoutingRegistry(registry, { repoRoot } = {}) {
     warnings,
     counts: {
       entries: registry.entries.length,
-      without_metadata: (registry.discovered_without_metadata || []).length,
+      without_metadata: unclassified.length,
+      unclassified: unclassified.length,
+      exempted: (registry.exempted_first_party || []).length,
       lock_entries: (registry.lock?.skills || []).length,
     },
   };

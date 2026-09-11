@@ -1,0 +1,19 @@
+schema_version: 1
+id: claude-handoff
+scope: shared-base
+actors:
+  - executor
+phases:
+  - operate
+capabilities:
+  - source-write
+  - terminal
+side_effects: local-write
+requires: []
+composes_with:
+  - handoff
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party
+priority: 40
