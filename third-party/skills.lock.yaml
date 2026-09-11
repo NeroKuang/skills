@@ -1,0 +1,10 @@
+schema_version: 1
+# Phase A foundation only. No real third-party Skills are admitted yet.
+# Example shape (kept commented so validation stays clean):
+# skills:
+#   - id: example-synth-research
+#     source: https://github.com/example/synth-research-skill
+#     ref: 1a2b3c4d5e6f7890
+#     trust: third-party
+#     routing_metadata: third-party/routing/example-synth-research.yaml
+skills: []

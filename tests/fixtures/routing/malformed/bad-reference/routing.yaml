@@ -1,0 +1,18 @@
+schema_version: 1
+id: bad-reference
+scope: shared-base
+actors:
+  - executor
+phases:
+  - implement
+capabilities:
+  - terminal
+side_effects: none
+requires:
+  - skill: definitely-missing-skill
+composes_with:
+  - also-missing-skill
+conflicts_with: []
+selectors: {}
+source:
+  type: first-party

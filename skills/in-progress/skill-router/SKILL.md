@@ -20,24 +20,55 @@ Determine:
 - constraints
 - allowed side effects
 - available execution capabilities
+- actor (`controller` or `executor`)
+- active repository identity when known
 
 If any of these are unknown, inspect available context first. Do not ask the human to select a skill.
 
-## Step 1: Discover the available skill set
+## Runtime order (mandatory)
+
+Deterministic filtering happens before any semantic `SKILL.md` comparison:
+
+```text
+scope resolution
+  -> actor filtering
+  -> capability filtering
+  -> phase classification
+  -> read surviving SKILL.md files
+  -> primary Skill selection
+  -> supporting Skill composition
+```
+
+Project-local Skills whose selectors do not match the active repository must be excluded during scope resolution. They must never enter the semantic candidate set.
+
+Machine-readable helpers in this repository:
+
+```bash
+node scripts/build-skill-index.mjs
+node scripts/validate-routing.mjs
+node tests/routing/run-cases.mjs --demo
+```
+
+`routing.yaml` is routing metadata only. `SKILL.md` remains the behavioral source of truth.
+
+## Step 1: Discover and scope-filter the available skill set
 
 Do not route from memory alone.
 
 Preferred discovery order:
 
-1. Read the repository skill catalog if present.
-2. Inspect promoted skills under `skills/engineering` and `skills/productivity`.
-3. Inspect relevant beta skills under `skills/in-progress` when the task may benefit from them.
-4. Read the candidate `SKILL.md` files before final selection.
+1. Prefer the generated Skill index when present (`routing/generated/skill-index.json`).
+2. Read first-party `routing.yaml` metadata and third-party lock/overlays when present.
+3. Apply scope resolution first. Drop project-local mismatches immediately.
+4. Inspect promoted skills under `skills/engineering` and `skills/productivity` that survive filtering.
+5. Inspect relevant beta skills under `skills/in-progress` when the task may benefit from them.
+6. Only then read surviving candidate `SKILL.md` files before final selection.
 
 When running locally in this repository, use:
 
 ```bash
 node scripts/skill-catalog.mjs
+node scripts/build-skill-index.mjs
 ```
 
 Use keyword filtering when useful:
@@ -49,8 +80,18 @@ node scripts/skill-catalog.mjs deploy
 ```
 
 The catalog is for discovery only. The selected skill's `SKILL.md` remains authoritative.
+Never treat `~/.cursor/skills` or `~/.agents/skills` as canonical sources.
 
-## Step 2: Classify the current phase
+## Step 2: Filter by actor and capability
+
+After scope resolution:
+
+1. Remove Skills whose `actors` do not match the current actor.
+2. Remove Skills whose required `capabilities` are impossible in the current environment.
+
+Example: an Executor-only Skill that requires `terminal` must not remain a candidate for a Controller without terminal access.
+
+## Step 3: Classify the current phase
 
 Classify the task into one primary phase:
 
@@ -68,9 +109,11 @@ Classify the task into one primary phase:
 
 Only one phase should own the next action. Supporting skills may cover adjacent phases.
 
-## Step 3: Generate candidates
+Keep only Skills whose declared `phases` include the active phase before semantic selection.
 
-Generate a small candidate set from actual discovered skills.
+## Step 4: Generate semantic candidates
+
+Generate a small candidate set from Skills that survived scope, actor, capability, and phase filters.
 
 For each candidate record:
 
@@ -80,8 +123,9 @@ For each candidate record:
 - whether another candidate subsumes it
 
 Do not select a skill merely because its name contains a matching word.
+Do not spend reasoning budget comparing Skills already excluded by deterministic filters.
 
-## Step 4: Choose the primary skill
+## Step 5: Choose the primary skill
 
 Choose the skill that best owns the current phase and deliverable.
 
@@ -93,7 +137,7 @@ Rules:
 - Prefer implementation skills only after behavior and acceptance criteria are clear enough.
 - Prefer human-loop skills only when the executor truly cannot perform the required step itself.
 
-## Step 5: Compose supporting skills
+## Step 6: Compose supporting skills
 
 Add supporting skills only when each one contributes a distinct phase or control.
 
@@ -107,7 +151,7 @@ loading `diagnosing-bugs`, `triage`, `research`, `prototype`, `implement`, and `
 
 Use `routing/flows.yaml` as the curated graph of common edges and forbidden shortcuts.
 
-## Step 6: Reject plausible alternatives
+## Step 7: Reject plausible alternatives
 
 The router must explicitly state at least the strongest rejected alternative when ambiguity exists.
 
@@ -120,7 +164,7 @@ Reason: this is a bug we are actively debugging, not an incoming unprocessed iss
 
 This makes routing decisions auditable and helps improve the routing map over time.
 
-## Step 7: Produce the Skill Plan
+## Step 8: Produce the Skill Plan
 
 Use this compact output:
 
@@ -137,7 +181,7 @@ Framework-Ref: <commit SHA, tag, or branch when available>
 
 For GitHub-controlled work, persist this plan in the issue before execution.
 
-## Step 8: Re-route at phase boundaries
+## Step 9: Re-route at phase boundaries
 
 Routing is repeated when the nature of the task changes.
 
