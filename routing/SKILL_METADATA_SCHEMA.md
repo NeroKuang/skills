@@ -95,7 +95,11 @@ The first phase should be the phase the Skill most naturally owns.
 
 ### `capabilities`
 
-Capabilities the Skill needs or materially uses.
+Hard execution capabilities required to run the Skill in the current environment.
+
+The router treats this list as a hard AND filter: every listed capability must be available, or the Skill is excluded before semantic selection.
+
+Do not list optional or "materially used" tools here. Optional tools belong in Skill prose or composition edges, not in hard capability requirements.
 
 Initial vocabulary:
 
@@ -116,7 +120,7 @@ Initial vocabulary:
 - `deployment`
 - `human-input`
 
-This list may expand, but free-form synonyms should not be introduced casually.
+This list may expand, but free-form synonyms should not be introduced casually. Validators reject unknown capability tokens.
 
 ### `side_effects`
 
@@ -234,11 +238,14 @@ A valid routing entry must satisfy all of the following:
 3. every actor is valid.
 4. every phase is valid.
 5. every side-effect class is valid.
-6. referenced Skills exist or are declared third-party entries.
-7. project-local Skills have at least one project selector.
-8. third-party Skills have provenance and a pinned ref.
-9. `SKILL.md` exists for first-party Skills.
-10. metadata must not contain secrets.
+6. every capability token exists in the canonical capability vocabulary.
+7. referenced Skills exist or are declared third-party entries.
+8. `requires` entries are skill ids or `{skill|capability}` objects with valid vocabulary.
+9. project-local Skills have at least one project selector.
+10. third-party Skills have provenance and a pinned ref.
+11. `SKILL.md` exists for first-party Skills.
+12. metadata must not contain secrets.
+13. non-routable exemptions bind one Skill by matching `id` and exact `skill_md` path.
 
 ## Router behavior
 
@@ -248,7 +255,7 @@ Routing uses metadata for deterministic exclusion first.
 all discovered Skills
   -> remove scope mismatches
   -> remove actor mismatches
-  -> remove capability impossibilities
+  -> remove capability impossibilities (hard AND against required capabilities)
   -> rank by phase and task intent
   -> read surviving SKILL.md files
   -> choose primary

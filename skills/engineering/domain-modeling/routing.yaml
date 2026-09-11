@@ -8,6 +8,7 @@ phases:
   - discover
 capabilities:
   - source-read
+  - source-write
 side_effects: repo-write
 requires: []
 composes_with:
@@ -18,3 +19,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
+notes: "Hard caps: reading glossary/ADRs and writing CONTEXT.md/ADRs"

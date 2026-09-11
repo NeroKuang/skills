@@ -8,7 +8,6 @@ phases:
 capabilities:
   - source-write
   - terminal
-  - tests
 side_effects: repo-write
 requires: []
 composes_with:
@@ -19,4 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 45
-notes: "Beta implement path for durable specs; prefer implement for full issue workflow"
+notes: "Beta implement path; tests optional via tdd composition"

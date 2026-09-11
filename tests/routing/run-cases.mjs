@@ -600,6 +600,169 @@ function caseN() {
   };
 }
 
+function caseO() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-b-crossed-exemption-'));
+  try {
+    writeEmptyThirdParty(tempRoot);
+    fs.mkdirSync(path.join(tempRoot, 'routing'), { recursive: true });
+    for (const id of ['skill-a', 'skill-b']) {
+      const dir = path.join(tempRoot, `skills/engineering/${id}`);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'SKILL.md'),
+        `---\nname: ${id}\ndescription: Crossed exemption fixture.\n---\n\n# ${id}\n`,
+        'utf8',
+      );
+    }
+    fs.writeFileSync(
+      path.join(tempRoot, 'routing/non-routable.yaml'),
+      [
+        'schema_version: 1',
+        'skills:',
+        '  - id: skill-a',
+        '    path: skills/engineering/skill-b/SKILL.md',
+        '    reason: deliberately crossed id/path pair',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const registry = loadRoutingRegistry(tempRoot);
+    assert.equal(registry.exempted_first_party.length, 0);
+    assert.equal(registry.unclassified_first_party.length, 2);
+    assert.ok(registry.unclassified_first_party.every((item) => ['skill-a', 'skill-b'].includes(item.id)));
+
+    const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
+    assert.equal(validation.ok, false);
+    assert.ok(
+      validation.errors.some(
+        (err) => err.id === 'skill-a' && /id\/path mismatch/.test(err.message),
+      ),
+      'Case O: crossed exemption must fail validation',
+    );
+
+    return {
+      name: 'O',
+      title: 'crossed exemption id/path fails and exempts neither Skill',
+      result: 'PASS',
+      detail: 'skill-a/skill-b remain unclassified; validation reports id/path mismatch',
+      errors: validation.errors.map((err) => `${err.id}: ${err.message}`),
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseP() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-b-bad-capability-'));
+  try {
+    writeEmptyThirdParty(tempRoot);
+    fs.mkdirSync(path.join(tempRoot, 'routing'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tempRoot, 'routing/non-routable.yaml'),
+      'schema_version: 1\nskills: []\n',
+      'utf8',
+    );
+    const skillDir = path.join(tempRoot, 'skills/engineering/bad-capability');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: bad-capability\ndescription: Invalid capability fixture.\n---\n\n# Bad Capability\n',
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(skillDir, 'routing.yaml'),
+      [
+        'schema_version: 1',
+        'id: bad-capability',
+        'scope: shared-base',
+        'actors:',
+        '  - executor',
+        'phases:',
+        '  - implement',
+        'capabilities:',
+        '  - soruce-read',
+        'side_effects: none',
+        'requires:',
+        '  - capability: not-a-real-capability',
+        '  - {}',
+        'composes_with: []',
+        'conflicts_with: []',
+        'selectors: {}',
+        'source:',
+        '  type: first-party',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const registry = loadRoutingRegistry(tempRoot);
+    const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
+    assert.equal(validation.ok, false);
+    assert.ok(validation.errors.some((err) => /invalid capability "soruce-read"/.test(err.message)));
+    assert.ok(
+      validation.errors.some((err) => /requires invalid capability "not-a-real-capability"/.test(err.message)),
+    );
+    assert.ok(
+      validation.errors.some((err) => /requires object must include skill or capability/.test(err.message)),
+    );
+
+    return {
+      name: 'P',
+      title: 'capability vocabulary fail-closed validation',
+      result: 'PASS',
+      detail: 'invalid capabilities and requires.capability values fail validation',
+      errors: validation.errors.map((err) => `${err.id}: ${err.message}`),
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseQ() {
+  const registry = loadRoutingRegistry(repoRoot);
+  const byId = new Map(registry.entries.map((entry) => [entry.id, entry]));
+
+  const domain = byId.get('domain-modeling');
+  assert.ok(domain);
+  assert.ok(domain.capabilities.includes('source-read'));
+  assert.ok(domain.capabilities.includes('source-write'));
+
+  const grill = byId.get('grill-with-docs');
+  assert.ok(grill);
+  assert.ok(grill.capabilities.includes('source-write'));
+  assert.ok(grill.capabilities.includes('human-input'));
+
+  const toSpec = byId.get('to-spec');
+  assert.ok(toSpec);
+  assert.ok(toSpec.capabilities.includes('source-read'));
+  assert.ok(toSpec.capabilities.includes('human-input'));
+  assert.ok(toSpec.capabilities.includes('source-write'));
+  assert.ok(toSpec.capabilities.includes('github-write'));
+
+  const diagnosing = byId.get('diagnosing-bugs');
+  assert.ok(diagnosing);
+  assert.ok(diagnosing.capabilities.includes('source-read'));
+  assert.ok(diagnosing.capabilities.includes('terminal'));
+  assert.equal(diagnosing.capabilities.includes('tests'), false);
+
+  // Hard AND semantics: diagnosing-bugs must remain selectable without tests.
+  const resolved = resolveSkillCandidates([diagnosing], {
+    actor: 'executor',
+    phase: 'investigate',
+    capabilities: ['source-read', 'terminal'],
+  });
+  assert.equal(resolved.candidate_ids.includes('diagnosing-bugs'), true);
+
+  return {
+    name: 'Q',
+    title: 'hard-capability semantic spot-check',
+    result: 'PASS',
+    detail:
+      'domain-modeling/grill-with-docs/to-spec/diagnosing-bugs capabilities match hard-requirement semantics',
+  };
+}
+
 function main() {
   const demo = process.argv.includes('--demo');
   const cases = [
@@ -617,6 +780,9 @@ function main() {
     caseL,
     caseM,
     caseN,
+    caseO,
+    caseP,
+    caseQ,
   ];
   const results = [];
 

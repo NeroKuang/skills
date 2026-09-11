@@ -18,3 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 60
+notes: "source-read of local repo is optional; hard caps are external research plus writing findings"

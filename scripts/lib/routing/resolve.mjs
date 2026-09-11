@@ -13,6 +13,7 @@ function actorMatches(entryActors, requestActor) {
 }
 
 function capabilityMatches(entryCapabilities, availableCapabilities) {
+  // Hard AND: every listed capability is an execution requirement.
   const required = asArray(entryCapabilities);
   if (required.length === 0) return true;
   if (!availableCapabilities) return false;

@@ -2,8 +2,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { SCHEMA_VERSION } from './constants.mjs';
-import { loadNonRoutableExemptions } from './exemptions.mjs';
+import {
+  findBoundExemption,
+  isCanonicalExemptionPath,
+  loadNonRoutableExemptions,
+} from './exemptions.mjs';
 import { loadYamlFile } from './parse-yaml.mjs';
+
+export {
+  findBoundExemption,
+  isCanonicalExemptionPath,
+  loadNonRoutableExemptions,
+} from './exemptions.mjs';
 
 function toPosix(p) {
   return p.split(path.sep).join('/');
@@ -257,13 +267,6 @@ export function loadRoutingRegistry(repoRoot, options = {}) {
       : undefined,
   });
 
-  const exemptionById = new Map();
-  const exemptionByPath = new Map();
-  for (const item of exemptions.skills) {
-    if (item.id) exemptionById.set(item.id, item);
-    if (item.path) exemptionByPath.set(item.path, item);
-  }
-
   const withMetadata = [
     ...firstParty.filter((entry) => entry.metadata_present),
     ...thirdParty,
@@ -274,9 +277,10 @@ export function loadRoutingRegistry(repoRoot, options = {}) {
   const unclassified = [];
 
   for (const entry of withoutMetadata) {
-    const exemption =
-      exemptionById.get(entry.id) || exemptionByPath.get(entry.skill_md) || null;
-    if (exemption) {
+    // Hard bind: id AND exact skill_md path must both match one exemption.
+    // Crossed pairs must not exempt either Skill.
+    const exemption = findBoundExemption(entry, exemptions.skills);
+    if (exemption && isCanonicalExemptionPath(exemption.path)) {
       exempted.push({
         id: entry.id,
         skill_md: entry.skill_md,

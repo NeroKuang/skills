@@ -8,7 +8,6 @@ phases:
 capabilities:
   - source-read
   - terminal
-  - tests
 side_effects: none
 requires: []
 composes_with:
@@ -20,3 +19,4 @@ selectors: {}
 source:
   type: first-party
 priority: 70
+notes: "tests/browser/curl are optional feedback-loop mechanisms, not hard caps"

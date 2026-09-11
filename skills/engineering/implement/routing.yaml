@@ -9,7 +9,6 @@ capabilities:
   - source-read
   - source-write
   - terminal
-  - tests
   - git-write
 side_effects: repo-write
 requires: []
@@ -21,3 +20,4 @@ selectors: {}
 source:
   type: first-party
 priority: 60
+notes: "tests are optional here; use tdd when test-first is required"

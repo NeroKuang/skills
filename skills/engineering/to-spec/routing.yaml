@@ -6,7 +6,9 @@ actors:
 phases:
   - design
 capabilities:
+  - source-read
   - source-write
+  - human-input
   - github-write
 side_effects: external-write
 requires: []
@@ -18,3 +20,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
+notes: "Hard caps: repo exploration, seam discussion with human, writing and publishing the spec"

@@ -9,6 +9,7 @@ phases:
 capabilities:
   - human-input
   - source-read
+  - source-write
 side_effects: repo-write
 requires: []
 composes_with:
@@ -21,3 +22,4 @@ selectors: {}
 source:
   type: first-party
 priority: 65
+notes: "Hard caps include source-write because durable docs are part of the workflow"

@@ -8,6 +8,7 @@ phases:
   - operate
 capabilities:
   - source-read
+  - source-write
   - terminal
 side_effects: local-write
 requires: []
@@ -18,4 +19,4 @@ selectors: {}
 source:
   type: first-party
 priority: 35
-notes: "Inventory/redaction helper for framework intake evidence"
+notes: "Hard caps include source-write for redacted inventory artifacts"

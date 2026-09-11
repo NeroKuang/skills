@@ -42,4 +42,6 @@ node tests/routing/run-cases.mjs --demo
 - Lock and overlay `source` / `ref` must agree; the lock is authoritative.
 - `build-skill-index` validates metadata before writing and fails closed on invalid input.
 - Every first-party `skills/**/SKILL.md` must have `routing.yaml` or an explicit entry in `routing/non-routable.yaml`.
+- Non-routable exemptions bind one Skill by matching both `id` and exact `skill_md` path.
+- `capabilities` are hard execution requirements (AND filter), not optional tool hints.
 - Generated indexes separate routable `skills` from `exempted_first_party`.
