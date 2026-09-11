@@ -149,7 +149,7 @@ function thirdPartyMatches(entry, context = {}) {
  * Scope resolution before actor/capability/phase filters.
  * Project-local mismatches are excluded here so later stages never see them.
  * Task-contract includeSkills may raise precedence, but never bypasses
- * third-party lock/provenance admission invariants.
+ * hard admission invariants (third-party lock/provenance, project-local selectors).
  */
 export function filterByScope(entries, context = {}) {
   const task = context.taskContract || {};
@@ -165,6 +165,17 @@ export function filterByScope(entries, context = {}) {
     }
 
     if (include.has(entry.id)) {
+      if (entry.scope === 'project-local' && !projectLocalMatches(entry, context)) {
+        excluded.push({
+          id: entry.id,
+          stage: 'scope',
+          reason: 'project-local-selector-mismatch',
+          selectors: entry.selectors || {},
+          active_repository: context.repository || null,
+          note: 'task-contract includeSkills cannot bypass project-local selectors',
+        });
+        continue;
+      }
       if (isThirdPartyEntry(entry) && !thirdPartyAdmitted(entry)) {
         excluded.push({
           id: entry.id,

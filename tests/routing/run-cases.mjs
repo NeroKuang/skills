@@ -362,9 +362,68 @@ function caseH() {
   }
 }
 
+function caseI() {
+  const registry = loadFixtureRegistry();
+  const result = resolveSkillCandidates(registry.entries, {
+    repository: 'example/pali-admin',
+    workingPath: '/tmp/example-pali-admin',
+    actor: 'executor',
+    phase: 'operate',
+    capabilities: ['terminal', 'deployment'],
+    taskContract: {
+      includeSkills: ['lobster-ping'],
+    },
+  });
+
+  assert.equal(
+    assertNotVisibleAfterScope(result, 'lobster-ping'),
+    true,
+    'Case I: lobster-ping must be excluded at scope even when includeSkills names it',
+  );
+  assert.equal(result.after_scope_ids.includes('lobster-ping'), false);
+  assert.equal(result.candidate_ids.includes('lobster-ping'), false);
+
+  const exclusion = result.excluded.find(
+    (item) =>
+      item.id === 'lobster-ping' &&
+      item.stage === 'scope' &&
+      item.reason === 'project-local-selector-mismatch',
+  );
+  assert.ok(exclusion, 'Case I: project-local-selector-mismatch required');
+  assert.match(
+    String(exclusion.note || ''),
+    /cannot bypass project-local/,
+    'Case I: exclusion must note includeSkills cannot bypass project-local selectors',
+  );
+
+  // Matching project-local Skills may still receive task-contract precedence.
+  const matched = resolveSkillCandidates(registry.entries, {
+    repository: 'example/lobster',
+    workingPath: '/tmp/example-lobster',
+    actor: 'executor',
+    phase: 'operate',
+    capabilities: ['terminal', 'deployment'],
+    taskContract: {
+      includeSkills: ['lobster-ping'],
+    },
+  });
+  const included = matched.candidates.find((item) => item.id === 'lobster-ping');
+  assert.ok(included, 'Case I: matching project-local include must survive');
+  assert.equal(included.resolution?.layer, 'task-contract');
+
+  return {
+    name: 'I',
+    title: 'explicit project-local include still requires selectors',
+    result: 'PASS',
+    detail:
+      'includeSkills=[lobster-ping] with active repository=example/pali-admin still excluded at scope as project-local-selector-mismatch',
+    after_scope_ids: result.after_scope_ids,
+  };
+}
+
 function main() {
   const demo = process.argv.includes('--demo');
-  const cases = [caseA, caseB, caseC, caseD, caseE, caseF, caseG, caseH];
+  const cases = [caseA, caseB, caseC, caseD, caseE, caseF, caseG, caseH, caseI];
   const results = [];
 
   for (const run of cases) {

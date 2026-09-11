@@ -80,6 +80,7 @@ routing_pipeline:
 
 invariants:
   - project_local_items_are_not_candidates_when_selectors_do_not_match
+  - task_contract_include_cannot_bypass_project_local_selectors
   - private_user_items_require_relevant_capability_or_explicit_task_match
   - third_party_items_require_lock_and_routing_overlay
   - third_party_lock_and_overlay_provenance_must_agree
