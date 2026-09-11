@@ -32,3 +32,5 @@ skills:
 - Overlays provide routing metadata only.
 - Upstream `SKILL.md` remains the behavioral source of truth.
 - An overlay without a matching lock entry is invalid and must not be admitted.
+- When both lock and overlay declare provenance, `source` / `ref` must match.
+- The lock is authoritative; mismatched overlays are rejected even if explicitly included by a task contract.

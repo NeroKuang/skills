@@ -84,6 +84,11 @@ function main() {
     );
   } catch (err) {
     console.error(`build-skill-index failed: ${err.message}`);
+    if (err.validation?.errors?.length) {
+      for (const error of err.validation.errors) {
+        console.error(`ERROR ${error.id || '-'}: ${error.message}`);
+      }
+    }
     process.exit(1);
   }
 }

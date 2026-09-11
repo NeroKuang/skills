@@ -14,6 +14,7 @@ export {
   filterByPhase,
   projectLocalMatches,
   assertNotVisibleAfterScope,
+  thirdPartyAdmitted,
 } from './resolve.mjs';
 export { validateRoutingRegistry } from './validate.mjs';
 export { buildSkillIndex, writeSkillIndex } from './build-index.mjs';

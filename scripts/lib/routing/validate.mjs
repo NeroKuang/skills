@@ -154,6 +154,31 @@ export function validateRoutingRegistry(registry, { repoRoot } = {}) {
           entry.id,
           'third-party entries require a matching third-party/skills.lock.yaml record',
         );
+      } else {
+        if (entry.lock_entry.source && repository && entry.lock_entry.source !== repository) {
+          pushError(
+            errors,
+            entry.id,
+            `third-party lock/overlay repository mismatch (lock=${entry.lock_entry.source}, effective=${repository})`,
+          );
+        }
+        if (entry.lock_entry.ref && ref && entry.lock_entry.ref !== ref) {
+          pushError(
+            errors,
+            entry.id,
+            `third-party lock/overlay ref mismatch (lock=${entry.lock_entry.ref}, effective=${ref})`,
+          );
+        }
+      }
+      if (entry.provenance_mismatch) {
+        const details = (entry.provenance_mismatches || [])
+          .map((item) => `${item.field}: lock=${item.lock} overlay=${item.overlay}`)
+          .join('; ');
+        pushError(
+          errors,
+          entry.id,
+          `third-party lock/overlay provenance mismatch${details ? ` (${details})` : ''}`,
+        );
       }
     }
 

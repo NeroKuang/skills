@@ -102,14 +102,26 @@ function privateUserMatches(entry, context = {}) {
   return explicit.some((cap) => wanted.has(cap));
 }
 
-function thirdPartyAdmitted(entry) {
+export function thirdPartyAdmitted(entry) {
   if (entry.admitted === false) return false;
+  if (entry.provenance_mismatch) return false;
   const source = entry.source || {};
   const repository = source.repository || entry.provenance?.source;
   const ref = source.ref || entry.provenance?.ref;
   if (!repository || !ref) return false;
   if (entry.lock_entry == null && entry.admitted !== true) return false;
   return true;
+}
+
+function thirdPartyAdmissionFailureReason(entry) {
+  if (entry.provenance_mismatch) {
+    return 'third-party-lock-overlay-provenance-mismatch';
+  }
+  return 'third-party-missing-lock-or-provenance';
+}
+
+function isThirdPartyEntry(entry) {
+  return entry.scope === 'third-party' || entry.source?.type === 'third-party';
 }
 
 function thirdPartyMatches(entry, context = {}) {
@@ -136,6 +148,8 @@ function thirdPartyMatches(entry, context = {}) {
 /**
  * Scope resolution before actor/capability/phase filters.
  * Project-local mismatches are excluded here so later stages never see them.
+ * Task-contract includeSkills may raise precedence, but never bypasses
+ * third-party lock/provenance admission invariants.
  */
 export function filterByScope(entries, context = {}) {
   const task = context.taskContract || {};
@@ -151,6 +165,15 @@ export function filterByScope(entries, context = {}) {
     }
 
     if (include.has(entry.id)) {
+      if (isThirdPartyEntry(entry) && !thirdPartyAdmitted(entry)) {
+        excluded.push({
+          id: entry.id,
+          stage: 'scope',
+          reason: thirdPartyAdmissionFailureReason(entry),
+          note: 'task-contract includeSkills cannot bypass third-party admission',
+        });
+        continue;
+      }
       surviving.push({
         ...entry,
         resolution: {
@@ -208,7 +231,7 @@ export function filterByScope(entries, context = {}) {
           stage: 'scope',
           reason: thirdPartyAdmitted(entry)
             ? 'third-party-not-requested'
-            : 'third-party-missing-lock-or-provenance',
+            : thirdPartyAdmissionFailureReason(entry),
         });
         continue;
       }

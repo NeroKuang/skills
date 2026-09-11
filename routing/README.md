@@ -37,3 +37,6 @@ node tests/routing/run-cases.mjs --demo
 - Project-local mismatches are removed before semantic Skill selection.
 - `~/.cursor/skills` and `~/.agents/skills` are never canonical sources.
 - Third-party Skills require `third-party/skills.lock.yaml` provenance plus a pinned ref.
+- Task-contract `includeSkills` cannot bypass third-party admission.
+- Lock and overlay `source` / `ref` must agree; the lock is authoritative.
+- `build-skill-index` validates metadata before writing and fails closed on invalid input.

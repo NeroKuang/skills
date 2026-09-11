@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Executable Cases A-E for Phase A routing foundation.
+ * Executable routing regression cases for Phase A.
  * Uses only synthetic fixture names. No private intake data.
  */
 
@@ -17,11 +17,13 @@ import {
   loadRoutingRegistry,
   resolveSkillCandidates,
   validateRoutingRegistry,
+  writeSkillIndex,
 } from '../../scripts/lib/routing/index.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../..');
 const fixtureRoot = path.join(repoRoot, 'tests/fixtures/routing');
+const mismatchRoot = path.join(fixtureRoot, 'mismatch');
 
 function loadFixtureRegistry() {
   return loadRoutingRegistry(fixtureRoot, {
@@ -29,6 +31,23 @@ function loadFixtureRegistry() {
     lockPath: path.join(fixtureRoot, 'third-party/skills.lock.yaml'),
     overlayDir: path.join(fixtureRoot, 'third-party/routing'),
   });
+}
+
+function writeEmptyThirdParty(tempRoot) {
+  fs.mkdirSync(path.join(tempRoot, 'third-party/routing'), { recursive: true });
+  fs.writeFileSync(
+    path.join(tempRoot, 'third-party/skills.lock.yaml'),
+    'schema_version: 1\nskills: []\n',
+    'utf8',
+  );
+}
+
+function copySkillFixture(tempRoot, fixtureName, targetRel) {
+  const sourceDir = path.join(fixtureRoot, 'malformed', fixtureName);
+  const targetDir = path.join(tempRoot, targetRel);
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.copyFileSync(path.join(sourceDir, 'SKILL.md'), path.join(targetDir, 'SKILL.md'));
+  fs.copyFileSync(path.join(sourceDir, 'routing.yaml'), path.join(targetDir, 'routing.yaml'));
 }
 
 function caseA() {
@@ -82,7 +101,6 @@ function caseB() {
   );
   assert.ok(actorHit, 'Case B: actor exclusion required');
 
-  // Also prove capability filtering when actor would otherwise pass.
   const capabilityOnly = resolveSkillCandidates(registry.entries, {
     repository: 'example/pali-admin',
     actor: 'executor',
@@ -128,7 +146,6 @@ function caseC() {
 function caseD() {
   const registry = loadFixtureRegistry();
 
-  // Resolver excludes orphan third-party lacking lock admission.
   const resolved = resolveSkillCandidates(registry.entries, {
     repository: 'example/pali-admin',
     actor: 'controller',
@@ -151,14 +168,11 @@ function caseD() {
   );
   assert.ok(orphanExclusion, 'Case D: missing lock must exclude orphan overlay');
 
-  // Validator also fails when orphan overlays are present.
   const validation = validateRoutingRegistry(registry, { repoRoot: fixtureRoot });
   assert.equal(validation.ok, false);
   assert.ok(
     validation.errors.some(
-      (err) =>
-        err.id === 'orphan-third-party' &&
-        /lock/i.test(err.message),
+      (err) => err.id === 'orphan-third-party' && /lock/i.test(err.message),
     ),
     'Case D: validator must reject third-party without lock',
   );
@@ -175,22 +189,10 @@ function caseD() {
 function caseE() {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-a-malformed-'));
   try {
-    const skillsRoot = path.join(tempRoot, 'skills/engineering/bad-phase');
-    fs.mkdirSync(skillsRoot, { recursive: true });
-    fs.copyFileSync(
-      path.join(fixtureRoot, 'malformed/bad-phase/SKILL.md'),
-      path.join(skillsRoot, 'SKILL.md'),
-    );
-    fs.copyFileSync(
-      path.join(fixtureRoot, 'malformed/bad-phase/routing.yaml'),
-      path.join(skillsRoot, 'routing.yaml'),
-    );
-    fs.mkdirSync(path.join(tempRoot, 'third-party/routing'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tempRoot, 'third-party/skills.lock.yaml'),
-      'schema_version: 1\nskills: []\n',
-      'utf8',
-    );
+    writeEmptyThirdParty(tempRoot);
+    copySkillFixture(tempRoot, 'bad-phase', 'skills/engineering/bad-phase');
+    copySkillFixture(tempRoot, 'bad-scope', 'skills/engineering/bad-scope');
+    copySkillFixture(tempRoot, 'bad-reference', 'skills/engineering/bad-reference');
 
     const registry = loadRoutingRegistry(tempRoot);
     const validation = validateRoutingRegistry(registry, { repoRoot: tempRoot });
@@ -199,32 +201,161 @@ function caseE() {
       validation.errors.some((err) => /invalid phase/.test(err.message)),
       'Case E: invalid phase must fail validation',
     );
-
-    // Second malformed fixture: invalid scope.
-    const scopeRoot = path.join(tempRoot, 'skills/engineering/bad-scope');
-    fs.mkdirSync(scopeRoot, { recursive: true });
-    fs.copyFileSync(
-      path.join(fixtureRoot, 'malformed/bad-scope/SKILL.md'),
-      path.join(scopeRoot, 'SKILL.md'),
-    );
-    fs.copyFileSync(
-      path.join(fixtureRoot, 'malformed/bad-scope/routing.yaml'),
-      path.join(scopeRoot, 'routing.yaml'),
-    );
-    const registry2 = loadRoutingRegistry(tempRoot);
-    const validation2 = validateRoutingRegistry(registry2, { repoRoot: tempRoot });
-    assert.equal(validation2.ok, false);
     assert.ok(
-      validation2.errors.some((err) => /invalid scope/.test(err.message)),
+      validation.errors.some((err) => /invalid scope/.test(err.message)),
       'Case E: invalid scope must fail validation',
+    );
+    assert.ok(
+      validation.errors.some(
+        (err) =>
+          err.id === 'bad-reference' &&
+          (/requires unknown skill/.test(err.message) ||
+            /composes_with references unknown skill/.test(err.message)),
+      ),
+      'Case E: unresolved Skill reference must fail validation',
     );
 
     return {
       name: 'E',
       title: 'malformed metadata validation failure',
       result: 'PASS',
-      detail: 'invalid phase/scope produce non-zero validation failure',
-      errors: validation2.errors.map((err) => `${err.id}: ${err.message}`),
+      detail: 'invalid phase/scope/reference produce validation failure',
+      errors: validation.errors.map((err) => `${err.id}: ${err.message}`),
+    };
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function caseF() {
+  const registry = loadFixtureRegistry();
+  const resolved = resolveSkillCandidates(registry.entries, {
+    repository: 'example/pali-admin',
+    actor: 'controller',
+    phase: 'research',
+    capabilities: ['external-research'],
+    taskContract: {
+      includeSkills: ['orphan-third-party'],
+      includeThirdParty: true,
+      explicitCapabilities: ['external-research'],
+    },
+  });
+
+  assert.equal(resolved.after_scope_ids.includes('orphan-third-party'), false);
+  assert.equal(resolved.candidate_ids.includes('orphan-third-party'), false);
+  const exclusion = resolved.excluded.find(
+    (item) =>
+      item.id === 'orphan-third-party' &&
+      item.reason === 'third-party-missing-lock-or-provenance',
+  );
+  assert.ok(exclusion, 'Case F: explicit include must still fail admission');
+  assert.match(
+    String(exclusion.note || ''),
+    /cannot bypass/,
+    'Case F: exclusion must note includeSkills cannot bypass admission',
+  );
+
+  return {
+    name: 'F',
+    title: 'explicit orphan third-party include still rejected',
+    result: 'PASS',
+    detail:
+      'task-contract includeSkills=[orphan-third-party] still excluded without lock/provenance',
+  };
+}
+
+function caseG() {
+  fs.mkdirSync(path.join(mismatchRoot, 'skills'), { recursive: true });
+  const registry = loadRoutingRegistry(mismatchRoot, {
+    skillsRoot: path.join(mismatchRoot, 'skills'),
+    lockPath: path.join(mismatchRoot, 'third-party/skills.lock.yaml'),
+    overlayDir: path.join(mismatchRoot, 'third-party/routing'),
+  });
+
+  const entry = registry.entries.find((item) => item.id === 'mismatched-research');
+  assert.ok(entry, 'Case G: mismatched-research overlay must load');
+  assert.equal(entry.admitted, false);
+  assert.equal(entry.provenance_mismatch, true);
+  assert.equal(entry.source.repository, 'https://github.com/example/locked-research-skill');
+  assert.equal(entry.source.ref, 'lock-ref-aaaa');
+
+  const validation = validateRoutingRegistry(registry, { repoRoot: mismatchRoot });
+  assert.equal(validation.ok, false);
+  assert.ok(
+    validation.errors.some(
+      (err) =>
+        err.id === 'mismatched-research' &&
+        /provenance mismatch/i.test(err.message),
+    ),
+    'Case G: validator must reject lock/overlay provenance mismatch',
+  );
+
+  const resolved = resolveSkillCandidates(registry.entries, {
+    repository: 'example/pali-admin',
+    actor: 'controller',
+    phase: 'research',
+    capabilities: ['external-research'],
+    taskContract: {
+      includeSkills: ['mismatched-research'],
+      includeThirdParty: true,
+    },
+  });
+  assert.equal(resolved.candidate_ids.includes('mismatched-research'), false);
+  assert.ok(
+    resolved.excluded.some(
+      (item) =>
+        item.id === 'mismatched-research' &&
+        item.reason === 'third-party-lock-overlay-provenance-mismatch',
+    ),
+    'Case G: resolver must exclude mismatched third-party even when explicitly included',
+  );
+
+  return {
+    name: 'G',
+    title: 'lock/overlay provenance mismatch rejected',
+    result: 'PASS',
+    detail:
+      'mismatched-research lock and overlay disagree on repository/ref; lock stays authoritative and entry is rejected',
+    errors: validation.errors.map((err) => `${err.id}: ${err.message}`),
+  };
+}
+
+function caseH() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'phase-a-build-fail-'));
+  const outputPath = path.join(tempRoot, 'out', 'skill-index.json');
+  try {
+    writeEmptyThirdParty(tempRoot);
+    copySkillFixture(tempRoot, 'bad-reference', 'skills/engineering/bad-reference');
+
+    let threw = false;
+    try {
+      writeSkillIndex(tempRoot, { outputRelativePath: outputPath });
+    } catch (err) {
+      threw = true;
+      assert.equal(err.code, 'ROUTING_VALIDATION_FAILED');
+      assert.ok(
+        /Invalid routing metadata/.test(err.message),
+        'Case H: builder must fail clearly on malformed metadata',
+      );
+      assert.ok(
+        err.validation?.errors?.some((item) => /unknown skill/.test(item.message)),
+        'Case H: builder failure must carry unresolved reference errors',
+      );
+    }
+
+    assert.equal(threw, true, 'Case H: writeSkillIndex must throw');
+    assert.equal(
+      fs.existsSync(outputPath),
+      false,
+      'Case H: invalid metadata must not emit a skill index artifact',
+    );
+
+    return {
+      name: 'H',
+      title: 'malformed build-index fails closed',
+      result: 'PASS',
+      detail:
+        'build/write path exits with ROUTING_VALIDATION_FAILED and does not emit a valid index',
     };
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -233,7 +364,7 @@ function caseE() {
 
 function main() {
   const demo = process.argv.includes('--demo');
-  const cases = [caseA, caseB, caseC, caseD, caseE];
+  const cases = [caseA, caseB, caseC, caseD, caseE, caseF, caseG, caseH];
   const results = [];
 
   for (const run of cases) {
@@ -241,7 +372,7 @@ function main() {
       results.push(run());
     } catch (err) {
       results.push({
-        name: run.name?.replace('case', '') || '?',
+        name: run.name?.replace(/^case/i, '') || '?',
         title: run.name || 'unknown',
         result: 'FAIL',
         detail: err instanceof Error ? err.message : String(err),

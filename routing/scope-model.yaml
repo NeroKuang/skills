@@ -3,7 +3,7 @@ schema_version: 1
 layers:
   - id: task-contract
     precedence: 100
-    description: Explicit Controller-approved task contract overrides normal routing when permitted.
+    description: Explicit Controller-approved task contract overrides normal routing precedence when permitted, but cannot bypass hard admission or safety invariants such as third-party lock/provenance.
 
   - id: project-local
     precedence: 80
@@ -71,6 +71,7 @@ rule_precedence:
 routing_pipeline:
   - scope-resolution
   - actor-resolution
+  - capability-filtering
   - phase-resolution
   - skill-selection
   - skill-composition
@@ -81,6 +82,8 @@ invariants:
   - project_local_items_are_not_candidates_when_selectors_do_not_match
   - private_user_items_require_relevant_capability_or_explicit_task_match
   - third_party_items_require_lock_and_routing_overlay
+  - third_party_lock_and_overlay_provenance_must_agree
+  - task_contract_include_cannot_bypass_third_party_admission
   - local_install_roots_are_not_canonical_sources
   - existing_public_contract_beats_generic_style_guidance
   - safety_constraints_require_framework_authorized_override

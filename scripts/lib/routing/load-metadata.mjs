@@ -125,6 +125,56 @@ export function loadFirstPartyRoutingEntries(repoRoot, { skillsRoot } = {}) {
   return entries;
 }
 
+function compareLockOverlayProvenance(lockEntry, overlaySource = {}) {
+  if (!lockEntry) {
+    return {
+      ok: false,
+      reason: 'missing-lock',
+      mismatches: [],
+    };
+  }
+  if (!lockEntry.source || !lockEntry.ref) {
+    return {
+      ok: false,
+      reason: 'incomplete-lock',
+      mismatches: [],
+    };
+  }
+
+  const mismatches = [];
+  const overlayRepository = overlaySource.repository;
+  const overlayRef = overlaySource.ref;
+
+  if (overlayRepository && overlayRepository !== lockEntry.source) {
+    mismatches.push({
+      field: 'repository',
+      lock: lockEntry.source,
+      overlay: overlayRepository,
+    });
+  }
+  if (overlayRef && overlayRef !== lockEntry.ref) {
+    mismatches.push({
+      field: 'ref',
+      lock: lockEntry.ref,
+      overlay: overlayRef,
+    });
+  }
+
+  if (mismatches.length > 0) {
+    return {
+      ok: false,
+      reason: 'lock-overlay-provenance-mismatch',
+      mismatches,
+    };
+  }
+
+  return {
+    ok: true,
+    reason: null,
+    mismatches: [],
+  };
+}
+
 export function loadThirdPartyRoutingOverlays(repoRoot, { overlayDir, lock } = {}) {
   const dir = overlayDir || path.join(repoRoot, 'third-party', 'routing');
   const lockData = lock || loadThirdPartyLock(repoRoot);
@@ -137,49 +187,45 @@ export function loadThirdPartyRoutingOverlays(repoRoot, { overlayDir, lock } = {
   const overlays = fs
     .readdirSync(dir)
     .filter((name) => name.endsWith('.yaml') || name.endsWith('.yml'))
+    .filter((name) => name !== 'README.yaml' && name !== 'README.yml')
     .sort((a, b) => a.localeCompare(b));
 
   return overlays.map((name) => {
     const full = path.join(dir, name);
     const raw = loadYamlFile(fs, full);
-    const lockEntry = lockById.get(raw.id);
+    const lockEntry = lockById.get(raw.id) || null;
+    const agreement = compareLockOverlayProvenance(lockEntry, raw.source || {});
+    const admitted = Boolean(lockEntry && agreement.ok);
+
+    // Lock is authoritative whenever present. Overlay provenance may only
+    // duplicate the lock values; mismatches are recorded and rejected.
+    const authoritativeSource = {
+      type: 'third-party',
+      repository: lockEntry?.source || raw.source?.repository || null,
+      ref: lockEntry?.ref || raw.source?.ref || null,
+    };
+
     const normalized = normalizeEntry(raw, {
       defaultSourceType: 'third-party',
       metadata_present: true,
       skill_md: null,
       routing_path: toPosix(path.relative(repoRoot, full)),
       bucket: 'third-party',
-      lock_entry: lockEntry || null,
-      admitted: Boolean(
-        lockEntry &&
-          lockEntry.source &&
-          lockEntry.ref &&
-          (raw.source?.repository || lockEntry.source) &&
-          (raw.source?.ref || lockEntry.ref),
-      ),
+      lock_entry: lockEntry,
+      admitted,
+      provenance_mismatch: agreement.reason === 'lock-overlay-provenance-mismatch',
+      provenance_mismatches: agreement.mismatches,
       provenance: {
         kind: 'third-party',
         lock_path: lockData.path,
         overlay_path: toPosix(path.relative(repoRoot, full)),
-        source: lockEntry?.source || raw.source?.repository || null,
-        ref: lockEntry?.ref || raw.source?.ref || null,
+        source: authoritativeSource.repository,
+        ref: authoritativeSource.ref,
+        agreement: agreement.reason || 'ok',
       },
     });
 
-    if (!normalized.source || normalized.source.type !== 'third-party') {
-      normalized.source = {
-        type: 'third-party',
-        repository: lockEntry?.source || raw.source?.repository,
-        ref: lockEntry?.ref || raw.source?.ref,
-      };
-    } else {
-      normalized.source = {
-        type: 'third-party',
-        repository: normalized.source.repository || lockEntry?.source,
-        ref: normalized.source.ref || lockEntry?.ref,
-      };
-    }
-
+    normalized.source = authoritativeSource;
     return normalized;
   });
 }
