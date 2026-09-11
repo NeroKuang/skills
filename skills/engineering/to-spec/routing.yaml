@@ -7,7 +7,6 @@ phases:
   - design
 capabilities:
   - source-read
-  - source-write
   - human-input
 side_effects: external-write
 requires: []
@@ -19,4 +18,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
-notes: "Tracker-agnostic; configured tracker access is resolved by Skill/task context, not hard github-* caps"
+notes: "Tracker-agnostic; source-write is backend-dependent and not a universal hard capability"

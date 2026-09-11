@@ -6,7 +6,6 @@ actors:
 phases:
   - plan
 capabilities:
-  - source-read
   - human-input
 side_effects: external-write
 requires: []
@@ -18,4 +17,4 @@ selectors: {}
 source:
   type: first-party
 priority: 55
-notes: "Tracker-agnostic; do not hard-require github-* because GitHub/GitLab/local trackers are alternatives"
+notes: "Tracker-agnostic; source-read is optional exploration, not a hard capability"

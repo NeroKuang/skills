@@ -737,7 +737,7 @@ function caseQ() {
   assert.ok(toSpec);
   assert.ok(toSpec.capabilities.includes('source-read'));
   assert.ok(toSpec.capabilities.includes('human-input'));
-  assert.ok(toSpec.capabilities.includes('source-write'));
+  assert.equal(toSpec.capabilities.includes('source-write'), false);
   assert.equal(toSpec.capabilities.includes('github-write'), false);
 
   const diagnosing = byId.get('diagnosing-bugs');
@@ -775,16 +775,52 @@ function caseR() {
     assert.equal(entry.capabilities.includes('github-write'), false, `${id} must not hard-require github-write`);
   }
 
-  // Without github-* available, tracker-agnostic Skills must still survive capability filtering.
-  const candidates = resolveSkillCandidates(
-    trackerNeutral.map((id) => byId.get(id)),
-    {
+  assert.deepEqual(byId.get('to-tickets').capabilities.slice().sort(), ['human-input']);
+  assert.deepEqual(byId.get('wayfinder').capabilities.slice().sort(), ['human-input']);
+  assert.ok(byId.get('to-spec').capabilities.includes('source-read'));
+  assert.ok(byId.get('to-spec').capabilities.includes('human-input'));
+  assert.equal(byId.get('to-spec').capabilities.includes('source-write'), false);
+  assert.ok(byId.get('triage').capabilities.includes('source-read'));
+  assert.ok(byId.get('triage').capabilities.includes('human-input'));
+
+  // Prove tracker-neutral Skills survive without backend-specific or local-only caps.
+  // Capability sets intentionally omit github-* and omit non-universal local source caps.
+  const toTicketsResolved = resolveSkillCandidates([byId.get('to-tickets')], {
+    actor: 'both',
+    phase: 'plan',
+    capabilities: ['human-input'],
+  });
+  assert.equal(toTicketsResolved.candidate_ids.includes('to-tickets'), true);
+
+  const wayfinderResolved = resolveSkillCandidates([byId.get('wayfinder')], {
+    actor: 'both',
+    phase: 'discover',
+    capabilities: ['human-input'],
+  });
+  assert.equal(wayfinderResolved.candidate_ids.includes('wayfinder'), true);
+
+  const toSpecResolved = resolveSkillCandidates([byId.get('to-spec')], {
+    actor: 'both',
+    phase: 'design',
+    capabilities: ['source-read', 'human-input'],
+  });
+  assert.equal(toSpecResolved.candidate_ids.includes('to-spec'), true);
+  assert.equal(
+    resolveSkillCandidates([byId.get('to-spec')], {
       actor: 'both',
       phase: 'design',
-      capabilities: ['source-read', 'source-write', 'human-input'],
-    },
+      capabilities: ['human-input'],
+    }).candidate_ids.includes('to-spec'),
+    false,
+    'to-spec still hard-requires source-read',
   );
-  assert.ok(candidates.candidate_ids.includes('to-spec'));
+
+  const triageResolved = resolveSkillCandidates([byId.get('triage')], {
+    actor: 'both',
+    phase: 'discover',
+    capabilities: ['source-read', 'human-input'],
+  });
+  assert.equal(triageResolved.candidate_ids.includes('triage'), true);
 
   const setup = byId.get('setup-matt-pocock-skills');
   assert.ok(setup.capabilities.includes('source-read'));
@@ -815,10 +851,10 @@ function caseR() {
 
   return {
     name: 'R',
-    title: 'tracker-neutral and remaining hard-capability cleanup',
+    title: 'tracker-neutral hard-capability filtering without local-only caps',
     result: 'PASS',
     detail:
-      'tracker-agnostic Skills accept non-GitHub capability sets; setup/implement-spec/wizard/tdd hard caps corrected',
+      'to-tickets/wayfinder survive with human-input only; to-spec survives without source-write; triage retains source-read',
   };
 }
 
